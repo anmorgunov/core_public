@@ -1,6 +1,3 @@
-# import tools 
-# import PRIVATE 
-
 class ParamParser:
     """This is an object that's responsible for parsing launch_parameters.txt. Currently it's only used as a secondary tool in "generate_bash.py"
     """
@@ -11,7 +8,6 @@ class ParamParser:
         # with open(tools.join_path(PRIVATE.BASE_PATH + ["calculations", 'launch_parameters.txt']), 'r') as f:
         with open('launch_parameters.txt', 'r') as f:
             self.lines = f.readlines()
-        self.atomToData = {}
         self.launchParams = []
 
         
@@ -50,11 +46,9 @@ class ParamParser:
             list: a list of dictionaries that specify parameters for a job 
         """
         self._parse() 
-        # return self.atomToData
         return self.launchParams
 
 if __name__ == "__main__":
-    sg = ParamParser()
-    # sg.main()
-    # print(sg.atomToData)
-    # print(sg.launchParams)
+    parser = ParamParser()
+    parser.main()
+    print(parser.launchParams)

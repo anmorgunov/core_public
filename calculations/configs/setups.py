@@ -30,6 +30,18 @@ TEST_CONFIG = dict(
     basisLibKey = '6-311+G(3df)',
     toPrintDensity = False,
 )
+LOCAL_CONFIG = dict(
+    doMP2=True,
+    doMP3=False,
+    doCCSD=False,
+    doTriples=False,
+    doSFX=True,
+    toFreeze=True,
+    doChengBasis=False,
+    doSpecialBasis=False,
+    basisLibKey="6-311+G(3df)",
+    toPrintDensity=False,
+)
 
 MP3_CONFIG = dict(
     doMP2 = True,
