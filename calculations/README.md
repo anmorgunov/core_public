@@ -48,6 +48,10 @@ END
 - `cores` - number of cores that will be allocated for the job
 - `partition` - with some clusters, you may need to specify the partition in your SLURM submission, so this is how you do it.
 
+To create submission scripts, simply run `generate_bash.py`.
+
+When you're with a given set of molecules, you can add a hashtag before `#START` and the whole block will be ignored on later calls to `generate_bash.py`.
+
 ## More on Configs
 
 In general, the CEBE calculations will proceed with the following config (the `GEN_CONFIG` in `configs/setups.py`):
