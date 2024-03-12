@@ -1,7 +1,6 @@
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font
 import os
-import sys
 import numpy as np
 from typing import List, Set
 
