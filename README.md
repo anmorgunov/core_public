@@ -1,5 +1,8 @@
 # Calculations of Core Excitations
 
+[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 This is part of the code extracted from a private repository.
 
 ## Structure
@@ -17,7 +20,7 @@ This is part of the code extracted from a private repository.
 Clone repository into a folder `core_excitations`:
 
 ```bash
-git clone git@github.com:anmorgunov/vv-core-excitations.git core_excitations
+git clone git@github.com:anmorgunov/cebe_prediction.git
 ```
 
 Rename `PRIVATE(example).py` to `PRIVATE.py`. Replace contents in `BASE_PATH` to specify path where your `core_excitations` folder is located. I use absolute paths for clarity and to avoid saving files exported by one of the modules in another.
