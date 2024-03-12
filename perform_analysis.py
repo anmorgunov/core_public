@@ -1,7 +1,7 @@
 
 import Analysis
 
-from Analysis.Parsing import Parser
+from Analysis.Modules import Parser
 
 import os
 import pprint
