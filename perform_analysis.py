@@ -78,5 +78,5 @@ eobj.calculate_overall_statistics()
 # print(eobj.methodToStats['mom']['T-Q-CCSD'])
 # print(eobj.methodToStats['mom']['MP2[D T Q 5]'])
 # print(eobj.methodToStats['mom']['MP2[D T Q 5]+DifD(T)'])
-
+# print(eobj.smallBasisException)
 

@@ -1,8 +1,7 @@
 import plotly.graph_objects as go
 import scipy.optimize
 import numpy as np
-from .. import constants
-from .Parser import MoleculeDataType, MethodDataType, BasisDataType, ExperDataType
+from .Parser import MethodDataType, BasisDataType, ExperDataType
 from typing import List, Tuple, Union, Dict, Optional
 
 Number = Union[float, int]
@@ -35,6 +34,76 @@ def extrapolate_energies(zetas, values):
     return popt[0]
 
 
+def parse_scheme(scheme: str) -> Tuple[str, List[str], str, bool]:
+    if "+" in scheme:
+        preargs, corr = scheme.split("+")
+        args = preargs.replace("[", " ").replace("]", " ").split()
+        method = args[0]
+        bases = args[1:]
+        corrBasis = corr.split("Dif")[-1]
+        if "(T)" in corrBasis:
+            corrBasis = corrBasis.split("(T)")[0]
+            corrTriples = True
+        else:
+            corrTriples = False
+    elif "[" in scheme:
+        args = scheme.replace("[", " ").replace("]", " ").split()
+        method = args[0]
+        bases = args[1:]
+        corrBasis = None
+        corrTriples = None
+    elif "-" in scheme:
+        args = scheme.split("-")
+        method = args[-1]
+        bases = args[:-1]
+        corrBasis = None
+        corrTriples = None
+    else:
+        raise NameError(f"Scheme {scheme} is not recognized")
+    return method, bases, corrBasis, corrTriples
+
+
+def extrapolate_molecule_given_scheme(
+    basisData: BasisDataType, scheme: str
+) -> Optional[Dict[str, Optional[Number]]]:
+    method, bases, corrBasis, corrTriples = parse_scheme(scheme)
+    if method == "HF":
+        method = "UHF"
+
+    basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5}
+    if len(bases) == 1:
+        assert (
+            corrBasis is not None
+        ), "You need to specify at least two basis sets for extrapolation"
+
+        method_cbs = basisData[bases[0]][method]
+    else:
+        energies = [basisData[basis][method] for basis in bases]
+        zetas = [basToCoeff[basis] for basis in bases]
+
+        method_cbs = extrapolate_energies(zetas, energies)
+
+    if corrBasis is not None:
+        corrMethod = "CCSD(T)" if corrTriples else "CCSD"
+        if (
+            corrBasis not in basisData
+            or "MP2" not in basisData[corrBasis]
+            or corrMethod not in basisData[corrBasis]
+        ):
+            return None
+
+        mp2 = basisData[corrBasis]["MP2"]
+        cc = basisData[corrBasis][corrMethod]
+        corr = cc - mp2
+        return {"cbs": method_cbs, "cbs+corr": method_cbs + corr, "corr": corr}
+    else:
+        return {
+            "cbs": method_cbs,
+            "cbs+corr": None,
+            "corr": None,
+        }
+
+
 class WholeDataset:
     """An object that is used to extrapolate results to CBS Limit for a given series.
     As of now, it assumes you have CCSD/CCSD(T) results for D,T,Q basis sets AND MP2 results for D,T,Q,5
@@ -45,89 +114,15 @@ class WholeDataset:
         Initialization
         """
         self.methodToCBS = {}
-
-        self.debug = False
-
         self.smallBasisException = {}
-        # self.atomToException = {}
-        # self.smallBases = 'STO-3G STO-6G 3-21G 4-31G 6-31G def2svp def2svpd'.split()
-
-    def parse_scheme(self, scheme: str) -> Tuple[str, List[str], str, bool]:
-        if "+" in scheme:
-            preargs, corr = scheme.split("+")
-            args = preargs.replace("[", " ").replace("]", " ").split()
-            method = args[0]
-            bases = args[1:]
-            corrBasis = corr.split("Dif")[-1]
-            if "(T)" in corrBasis:
-                corrBasis = corrBasis.split("(T)")[0]
-                corrTriples = True
-            else:
-                corrTriples = False
-        elif "[" in scheme:
-            args = scheme.replace("[", " ").replace("]", " ").split()
-            method = args[0]
-            bases = args[1:]
-            corrBasis = None
-            corrTriples = None
-        elif "-" in scheme:
-            args = scheme.split("-")
-            method = args[-1]
-            bases = args[:-1]
-            corrBasis = None
-            corrTriples = None
-        else:
-            raise NameError(f"Scheme {scheme} is not recognized")
-        if self.debug:
-            print(f"{method=}, {bases=}, {corrBasis=}, {corrTriples=}")
-        return method, bases, corrBasis, corrTriples
-
-    def extrapolate_molecule_given_scheme(
-        self, basisData: BasisDataType, scheme: str
-    ) -> Optional[Dict[str, Optional[Number]]]:
-        method, bases, corrBasis, corrTriples = self.parse_scheme(scheme)
-        if method == "HF":
-            method = "UHF"
-
-        basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5}
-        if len(bases) == 1:
-            assert (
-                corrBasis is not None
-            ), "You need to specify at least two basis sets for extrapolation"
-
-            method_cbs = basisData[bases[0]][method]
-        else:
-            energies = [basisData[basis][method] for basis in bases]
-            zetas = [basToCoeff[basis] for basis in bases]
-
-            method_cbs = extrapolate_energies(zetas, energies)
-
-        if corrBasis is not None:
-            corrMethod = "CCSD(T)" if corrTriples else "CCSD"
-            if (
-                corrBasis not in basisData
-                or "MP2" not in basisData[corrBasis]
-                or corrMethod not in basisData[corrBasis]
-            ):
-                return None
-
-            mp2 = basisData[corrBasis]["MP2"]
-            cc = basisData[corrBasis][corrMethod]
-            corr = cc - mp2
-            return {"cbs": method_cbs, "cbs+corr": method_cbs + corr, "corr": corr}
-        else:
-            return {
-                "cbs": method_cbs,
-                "cbs+corr": None,
-                "corr": None,
-            }
+        self.debug = False
 
     def extrapolate_all_data(self, methodData: MethodDataType, schemes: List[str]):
         for method, atomData in methodData.items():
             for atom, molData in atomData.items():
                 for mol, basisData in molData.items():
                     for scheme in schemes:
-                        result = self.extrapolate_molecule_given_scheme(
+                        result = extrapolate_molecule_given_scheme(
                             basisData, scheme
                         )
                         if result is None:
