@@ -2,7 +2,15 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font
 import os
 import numpy as np
-from typing import List, Set
+from typing import List, Set, Union, Dict, Optional
+
+
+Number = Union[float, int]
+ExperDataType = Dict[str, Number]
+BasisDataType = Dict[str, Union[str, Number]]
+MoleculeDataType = Dict[str, BasisDataType]
+AtomDataType = Dict[str, MoleculeDataType]
+MethodDataType = Dict[str, AtomDataType]
 
 
 CALC_WB_COLS = {
@@ -27,7 +35,7 @@ CALC_WB_COLS = {
 }
 
 
-def get_next_col(col, prefix=None):
+def get_next_col(col:str, prefix:Optional[str]=None)->str:
     if prefix is None:
         prefix = ""
     strings = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -65,13 +73,11 @@ class ParsedData:
 
         self.saveWB = Workbook()
 
-        self.molToExper = {}
+        self.molToExper:ExperDataType = {}
         self.doAverageExperimental = do_average_experimental
 
         self.methods = methods
         self.methodToData = {}
-        self.molToData = {}
-        self.molPaths = set()
 
         self.debug = False
 
@@ -106,7 +112,7 @@ class ParsedData:
             if self.debug:
                 print(f"{atoms=}")
             for atom in atoms:
-                atomToData = self.methodToData.setdefault(method, {}).setdefault(
+                atomToData:AtomDataType = self.methodToData.setdefault(method, {}).setdefault(
                     atom, {}
                 )
 
@@ -130,7 +136,7 @@ class ParsedData:
                     if self.debug:
                         print(f"{bases=}")
                     for basis in bases:
-                        basisToData = atomToData.setdefault(molecule, {}).setdefault(
+                        basisToData:BasisDataType = atomToData.setdefault(molecule, {}).setdefault(
                             basis, {}
                         )
                         basPath = os.path.join(molPath, basis)
@@ -264,13 +270,6 @@ class ParsedData:
 
         self.saveWB.save(self.savePath)
 
-    def main(self, save: bool = True):
-        self._parse_experimental()
-        self._parse_calculations()
-        self._calculate_mp25()
-        if save:
-            self._update_calculation_wb()
-
     def extract_molecules(self, mols:Set[str], save_path:str):
         """
         """
@@ -301,6 +300,31 @@ class ParsedData:
             row += 1
         new_wb.save(save_path)
 
+    def filter_data_by_molecules(self, methodToData:MethodDataType, atomToMols:Dict[str, Set[str]]) -> MethodDataType:
+        filtered_methodToData = {}
+        for method, atomData in methodToData.items():
+            for atom, molData in atomData.items():
+                for molecule, basData in molData.items():
+                    if molecule in atomToMols[atom]:
+                        filtered_methodToData.setdefault(method, {}).setdefault(atom, {})[molecule] = basData
+                        filtered_methodToData[method][atom][molecule] = basData
+        return filtered_methodToData
+
+    def filter_by_presence_of_experimental(self, methodToData:MethodDataType) -> MethodDataType:
+        filtered_methodToData = {}
+        for method, atomData in methodToData.items():
+            for atom, molData in atomData.items():
+                for molecule, basData in molData.items():
+                    if molecule in self.molToExper:
+                        filtered_methodToData.setdefault(method, {}).setdefault(atom, {})[molecule] = basData
+        return filtered_methodToData
+
+    def main(self, save: bool = True):
+        self._parse_experimental()
+        self._parse_calculations()
+        self._calculate_mp25()
+        if save:
+            self._update_calculation_wb()
 
 if __name__ == "__main__":
     # perform_parsing()

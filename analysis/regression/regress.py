@@ -2,7 +2,7 @@ import scipy.stats
 import plotly.graph_objects as go
 import numpy as np
 # import my_constants as constants
-import constants
+import Analysis.constants as constants
 import os
 import sys
 sys.path.append('../../core_excitations') # this allows us to import files from parent directories

@@ -1,181 +1,290 @@
-import plotly.graph_objects as go 
-import sys 
-sys.path.append("../../core_excitations")
-from analysis.parser import parse
+import plotly.graph_objects as go
 import scipy.optimize
 import numpy as np
-import constants
-import tools
-import PRIVATE
+from .. import constants
+from .Parser import MoleculeDataType, MethodDataType, BasisDataType, ExperDataType
+from typing import List, Tuple, Union, Dict, Optional
 
-class CBSLimit:
+Number = Union[float, int]
+
+
+def rounder(dig):
+    def rounder_to_dig(float):
+        return format(np.around(float, dig), f".{dig}f")
+
+    return rounder_to_dig
+
+
+def _helgaker(zeta, a, b):
+    """A standard helgaker extrapolation formula. Note: a, b are parameters which we seek. We pass them as parameters not because they're known,
+    but because that's how scipy.optimize works (which actually finds those parameters).
+
+    Args:
+        zeta (int): an integer describing "zeta" value of basis set
+        a (float): extrapolation parameter
+        b (float): extrapolation parameter
+
+    Returns:
+        float: a fitted value at a given zeta level and given parameters
+    """
+    return a + b * (zeta ** (-3))
+
+
+def extrapolate_energies(zetas, values):
+    popt, pcov = scipy.optimize.curve_fit(_helgaker, zetas, values)
+    return popt[0]
+
+
+class WholeDataset:
     """An object that is used to extrapolate results to CBS Limit for a given series.
     As of now, it assumes you have CCSD/CCSD(T) results for D,T,Q basis sets AND MP2 results for D,T,Q,5
     """
-    
+
     def __init__(self):
-        """Initialization
-
-        Args:
-            mols (str): a string of molecule names separated by spaces
-            method (str): essentially an address to calculation results: /calculations/{method}/. In my case it's usually mom/{atom}
         """
-        self.atomToMols = constants.ATOM_TO_MOLS
-        self.METHOD = lambda x: f'mom/{x.lower()}'
-        self.parsed = parse.perform_parsing(fillMol=False) # parse all calculation results
-        self.atomToMolToCBS = {} 
-        self.atomToMolToMP2 = {} 
-        self.basToCoeff = {'D': 2, 'T': 3, 'Q': 4, '5': 5} # used for Helgaker-type extrapolation
-        self.EXTRAPOLATION = PRIVATE.BASE_PATH + ['analysis', 'extrapolation']
-
-
-    def _helgaker(self, zeta, a, b):
-        """A standard helgaker extrapolation formula. Note: a, b are parameters which we seek. We pass them as parameters not because they're known,
-        but because that's how scipy.optimize works (which actually finds those parameters).
-
-        Args:
-            zeta (int): an integer describing "zeta" value of basis set
-            a (float): extrapolation parameter
-            b (float): extrapolation parameter
-
-        Returns:
-            float: a fitted value at a given zeta level and given parameters
+        Initialization
         """
-        return a + b * (zeta**(-3))
+        self.methodToCBS = {}
 
-    def extrapolate_two_basis(self, bases, method):
-        """Despite the name, this function handles more than two bases.
+        self.debug = False
 
-        Args:
-            bases (str): a string of "zetas" separated by space. These zetas are used for extrapolation
-            method (str): a name of the method for which we do the extrapolation
-        """
-        name = '-'.join(bases.split()) + f'-{method}' # naming scheme: list zetas w/ hyphens and specify method
-        for atom, mols in self.atomToMols.items():
-            if atom not in self.atomToMolToCBS:
-                self.atomToMolToCBS[atom] = {}
-            molToCBS = self.atomToMolToCBS[atom]
-            for mol in mols.split():
-            # for mol in self.mols:
-                basToData = self.parsed.methodToData[self.METHOD(atom)][mol] # get data for a molecule
-                if len(bases) == 1: # trivial case when no extrapolation is needed
-                    extrapolated = basToData[bases[0]][method]
-                else:
-                    for bas in bases.split():
-                        if method not in basToData[bas]:
-                            print('this should not happen', mol, bas)
-                    values = [basToData[bas][method] for bas in bases.split()]
-                    zetas = [self.basToCoeff[bas] for bas in bases.split()]
-                    popt, pcov = scipy.optimize.curve_fit(self._helgaker, zetas, values)
-                    #popt is a tuple of optimal parameters a, b defined by _helgaker.
-                    extrapolated = popt[0]
-                molToCBS.setdefault(mol, {})[name] = extrapolated
-            # self.atomToMolToCBS[atom] = molToCBS
-        
-            
-    def fill_dictionaries(self, names, atoms):
-        """This method fills nameToErrors and molToNameToData dictionaries
+        self.smallBasisException = {}
+        # self.atomToException = {}
+        # self.smallBases = 'STO-3G STO-6G 3-21G 4-31G 6-31G def2svp def2svpd'.split()
 
-        Names - the list of extrapolation methods that should be included in the dictionary.
+    def parse_scheme(self, scheme: str) -> Tuple[str, List[str], str, bool]:
+        if "+" in scheme:
+            preargs, corr = scheme.split("+")
+            args = preargs.replace("[", " ").replace("]", " ").split()
+            method = args[0]
+            bases = args[1:]
+            corrBasis = corr.split("Dif")[-1]
+            if "(T)" in corrBasis:
+                corrBasis = corrBasis.split("(T)")[0]
+                corrTriples = True
+            else:
+                corrTriples = False
+        elif "[" in scheme:
+            args = scheme.replace("[", " ").replace("]", " ").split()
+            method = args[0]
+            bases = args[1:]
+            corrBasis = None
+            corrTriples = None
+        elif "-" in scheme:
+            args = scheme.split("-")
+            method = args[-1]
+            bases = args[:-1]
+            corrBasis = None
+            corrTriples = None
+        else:
+            raise NameError(f"Scheme {scheme} is not recognized")
+        if self.debug:
+            print(f"{method=}, {bases=}, {corrBasis=}, {corrTriples=}")
+        return method, bases, corrBasis, corrTriples
 
-        Args:
-            names (list): a list of extrapolation methods that should be analyzed
-        """
-        round2 = self.rounder(2)
-        nameToErr = {}
-        molToNameToData = {}
-        #redacted
-        #end redacted
-        nameToErr[name] = {}
-        nameToErr[name]['raw'] = errors
-        nameToErr[name]['MSE'] = round2(np.mean(errors)) #MSE - Mean Signed Error
-        nameToErr[name]['MAE'] = round2(np.mean([abs(err) for err in errors])) # Mean Absolute Error
-        nameToErr[name]['MaxAE'] = round2(max([abs(err) for err in errors])) # Max Absolute Error
-        nameToErr[name]['MedAE'] = round2(np.median([abs(err) for err in errors])) # Median Absolute Error
-        nameToErr[name]['STD(AE)'] = round2(np.std([abs(err) for err in errors])) # STD of Absolute Errors
+    def extrapolate_molecule_given_scheme(
+        self, basisData: BasisDataType, scheme: str
+    ) -> Optional[Dict[str, Optional[Number]]]:
+        method, bases, corrBasis, corrTriples = self.parse_scheme(scheme)
+        if method == "HF":
+            method = "UHF"
 
-        self.nameToErrors = nameToErr
-        self.molToNameToData = molToNameToData
-    
-    def export_mp2_extrapolated_values(self, atoms, name):
-        #redacted
-        pass
+        basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5}
+        if len(bases) == 1:
+            assert (
+                corrBasis is not None
+            ), "You need to specify at least two basis sets for extrapolation"
 
+            method_cbs = basisData[bases[0]][method]
+        else:
+            energies = [basisData[basis][method] for basis in bases]
+            zetas = [basToCoeff[basis] for basis in bases]
 
-    def plot_mp2_study(self):
-        """A helper function used to study the effect of difference in small basis set (whether it's really improving results).
-        Short answer: yes, it does improve.
-        """
-        #redacted
-        pass
+            method_cbs = extrapolate_energies(zetas, energies)
 
-    def export_errors(self, names, atoms):
-        """Exports errors as md table.
+        if corrBasis is not None:
+            corrMethod = "CCSD(T)" if corrTriples else "CCSD"
+            if (
+                corrBasis not in basisData
+                or "MP2" not in basisData[corrBasis]
+                or corrMethod not in basisData[corrBasis]
+            ):
+                return None
 
-        The names used define what data will be printed in the table.
-        """
-        self.fill_dictionaries(names, atoms)
-        headers = ['Extrapolation Scheme', 'MSE', 'MAE', 'MedAE', 'MaxAE', 'STD', 'Sample Size']
-        body = []
-        for name in names:
-            erD = self.nameToErrors[name]
-            row = [name, f"{erD['MSE']}", f"{erD['MAE']}", f"{erD['MedAE']}", f"{erD['MaxAE']}", f"{erD['STD(AE)']}", f"{len(erD['raw'])}"]
-            body.append(row)
-        return headers, body
+            mp2 = basisData[corrBasis]["MP2"]
+            cc = basisData[corrBasis][corrMethod]
+            corr = cc - mp2
+            return {"cbs": method_cbs, "cbs+corr": method_cbs + corr, "corr": corr}
+        else:
+            return {
+                "cbs": method_cbs,
+                "cbs+corr": None,
+                "corr": None,
+            }
 
-    def initialize(self):
-        """This function extrapolates calculation results to CBS limit 
-        """
-        # redacted
-        pass
+    def extrapolate_all_data(self, methodData: MethodDataType, schemes: List[str]):
+        for method, atomData in methodData.items():
+            for atom, molData in atomData.items():
+                for mol, basisData in molData.items():
+                    for scheme in schemes:
+                        result = self.extrapolate_molecule_given_scheme(
+                            basisData, scheme
+                        )
+                        if result is None:
+                            self.smallBasisException.setdefault(method, {}).setdefault(
+                                atom, {}
+                            )[mol] = scheme
+                        else:
+                            self.methodToCBS.setdefault(method, {}).setdefault(
+                                atom, {}
+                            ).setdefault(mol, {})[scheme] = result
 
-    def save_fig(self, figure, fname, html=True, jpg=False):
-        if html: figure.write_html(tools.join_path(self.EXTRAPOLATION+['output', f"{fname}.html"]), include_plotlyjs='cdn')
-        if jpg: figure.write_image(tools.join_path(self.EXTRAPOLATION+['output', f"{fname}.jpg"]), scale=4.0)
+    def calculate_errors(self, experimentalData: ExperDataType):
+        methodToError = {}
+        for method, atomData in self.methodToCBS.items():
+            for atom, molData in atomData.items():
+                for mol, schemeData in molData.items():
+                    for scheme, data in schemeData.items():
+                        if data["cbs+corr"] is not None:
+                            error = data["cbs+corr"] - experimentalData[mol]
+                            methodToError.setdefault(method, {}).setdefault(
+                                atom, {}
+                            ).setdefault(mol, {})[scheme] = error
+                        else:
+                            error = data["cbs"] - experimentalData[mol]
+                            methodToError.setdefault(method, {}).setdefault(
+                                atom, {}
+                            ).setdefault(mol, {})[scheme] = error
+        self.methodToError = methodToError
 
-    def triples_study(self, names):
-        round4 = self.rounder(4)
-        self.fill_dictionaries(names)
-        #self.molToCBS[mol][name]
-        methods = 'D-T-Q-CCSD D-T-Q-CCSD(T)'.split()
-        t_corrs = []
-        t_corrs_rel = []
-        t_corrs_rel_el = []
-        t_corrs_el = []
-        for mol in self.mols:
-            t_corr = self.molToCBS[mol][methods[1]] - self.molToCBS[mol][methods[0]]
-            t_corrs.append(round4(t_corr))
-            # t_corrs_rel.append(round2(t_corr/self.molToCBS[mol][methods[0]]*100, 2))
-            t_corrs_rel.append(t_corr/self.molToCBS[mol][methods[0]]*100)
-            nel = sum(self.parsed.molToData[mol]['nelec'])
-            # print(nel)
-            # t_corrs_el.append(round2(t_corr/(self.molToCBS[mol][methods[0]]*nel)*100*100, 2))
-            t_corrs_rel_el.append(t_corr/(self.molToCBS[mol][methods[0]]*nel)*100*50)
-            t_corrs_el.append(t_corr/nel)
+    def calculate_series_statistics(self):
+        assert hasattr(self, "methodToError"), "You need to call calculate_errors first"
+        methodToAtomErrors = {}
+        for method, atomData in self.methodToError.items():
+            for atom, molData in atomData.items():
+                for schemeData in molData.values():
+                    for scheme, error in schemeData.items():
+                        methodToAtomErrors.setdefault(method, {}).setdefault(
+                            atom, {}
+                        ).setdefault(scheme, []).append(error)
+        methodToAtomStats = {}
+        for method, atomData in methodToAtomErrors.items():
+            for atom, schemeData in atomData.items():
+                for scheme, errors_list in schemeData.items():
+                    errors = np.array(errors_list)
+                    abs_errs = np.abs(errors)
+                    methodToAtomStats.setdefault(method, {}).setdefault(atom, {})[
+                        scheme
+                    ] = {
+                        "MSE": np.mean(errors),
+                        "MAE": np.mean(abs_errs),
+                        "MedAE": np.median(abs_errs),
+                        "MaxAE": np.max(abs_errs),
+                        "STD(AE)": np.std(abs_errs),
+                        "n": len(errors),
+                    }
+        self.methodToAtomStats = methodToAtomStats
 
+    def calculate_overall_statistics(self):
+        assert hasattr(self, "methodToError"), "You need to call calculate_errors first"
+        methodToErrors = {}
+        for method, atomData in self.methodToError.items():
+            for molData in atomData.values():
+                for schemeData in molData.values():
+                    for scheme, error in schemeData.items():
+                        methodToErrors.setdefault(method, {}).setdefault(
+                            scheme, []
+                        ).append(error)
+        methodToStats = {}
+        for method, schemeData in methodToErrors.items():
+            for scheme, errors in schemeData.items():
+                errors = np.array(errors)
+                abs_errs = np.abs(errors)
+                methodToStats.setdefault(method, {})[scheme] = {
+                    "MSE": np.mean(errors),
+                    "MAE": np.mean(abs_errs),
+                    "MedAE": np.median(abs_errs),
+                    "MaxAE": np.max(abs_errs),
+                    "STD(AE)": np.std(abs_errs),
+                    "n": len(errors),
+                }
+        self.methodToStats = methodToStats
 
-        fig = go.Figure()
-        fig.add_trace(self.create_bar_trace(t_corrs, self.mols, 'Absolute correction'))
-        fig.add_trace(self.create_bar_trace(t_corrs_rel, self.mols, 'Relative correction'))
-        fig.add_trace(self.create_bar_trace(t_corrs_rel_el, self.mols, 'Relative correction (per 50 el)'))
-        fig.add_trace(self.create_bar_trace(t_corrs_el, self.mols, 'Absolute correction (per el)'))
-        self._update_fig(fig)
-        self.save_fig(fig, f'triples-{self.ATOM}-DTQ')
-        pass
+    # def export_errors(self, names, atoms):
+    #     """Exports errors as md table.
 
-    def export_extrapolations(self, names, molecules, fname):
-        for molecule in molecules:
-            #print(f"exp for {molecule} is {self.parsed.molToExper[molecule]}")
-            for name in names:
-                data = self.atomToMolToCBS['N'][molecule][name]
-                print(f"{molecule} in {name}: {self.rounder(2)(data)}")
+    #     The names used define what data will be printed in the table.
+    #     """
+    #     atomstr = "".join(atoms)
+    #     self.fill_dictionaries(names, atoms)
+    #     headers = [
+    #         "Extrapolation Scheme",
+    #         "MSE",
+    #         "MAE",
+    #         "MedAE",
+    #         "MaxAE",
+    #         "STD",
+    #         "Sample Size",
+    #     ]
+    #     body = []
+    #     for name in names:
+    #         erD = self.nameToErrors[name]
+    #         row = [
+    #             name,
+    #             f"{erD['MSE']}",
+    #             f"{erD['MAE']}",
+    #             f"{erD['MedAE']}",
+    #             f"{erD['MaxAE']}",
+    #             f"{erD['STD(AE)']}",
+    #             f"{len(erD['raw'])}",
+    #         ]
+    #         body.append(row)
+    #     return headers, body
 
+    def _create_extrapolation_schemes(self):
+        # CCSD schemes
+        ccsd_schemes = []
+        for method in "CCSD CCSD(T)".split():
+            for bases in "D-T T-Q D-T-Q".split():
+                ccsd_schemes.append(f"{bases}-{method}")
+        if self.debug:
+            print(f"{ccsd_schemes=}")
 
-def export():
-    obj = CBSLimit()
-    obj.initialize()
-    return obj
+        hf_schemes = []
+        for bases in "T-Q D-T-Q T-Q-5 D-T-Q-5".split():
+            hf_schemes.append(f"{bases}-HF")
+        if self.debug:
+            print(f"{hf_schemes=}")
+
+        mp2_schemes = []
+        mp2_bases = "D | T | Q | 5 | D T | D T Q | T Q | Q 5 | T Q 5 | D T Q 5"
+        for bases in mp2_bases.split(" | "):
+            if len(bases) != 1:
+                mp2_schemes.append(f"MP2[{bases}]")
+            for (
+                small_basis
+            ) in "STO-3G STO-6G 3-21G 4-31G 6-31G def2svp def2svpd D".split():
+                if bases == "D" and small_basis == "D":
+                    continue
+                mp2_schemes.append(f"MP2[{bases}]+Dif{small_basis}")
+                mp2_schemes.append(f"MP2[{bases}]+Dif{small_basis}(T)")
+
+        if self.debug:
+            print(f"{mp2_schemes=}")
+
+        self.schemes = {
+            "CCSD": ccsd_schemes,
+            "HF": hf_schemes,
+            "MP2": mp2_schemes,
+        }
+
 
 if __name__ == "__main__":
-    obj = CBSLimit()
-    obj.initialize()
+    atomToNames = {
+        "C": "D-T-Q-CCSD(T), MP2(D T Q)+DifD(T)".split(", "),
+        "N": "D-T-Q-CCSD(T), MP2(D T Q 5)+DifD(T)".split(", "),
+        "O": "T-Q-CCSD, MP2(Q)+DifD".split(", "),
+        "F": "T-Q-CCSD(T), MP2(Q)+DifD".split(", "),
+    }
+
+    obj = WholeDataset()

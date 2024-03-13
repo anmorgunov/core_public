@@ -1,6 +1,6 @@
 import plotly.graph_objects as go
 # import my_constants as constants
-import constants
+import Analysis.constants as constants
 
 class GraphObject:
 

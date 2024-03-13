@@ -1,11 +1,16 @@
-
+from Analysis import constants
 import Analysis
 
 from Analysis.Modules import Parser
+from Analysis.Modules import Extrapolation
 
 import os
 import pprint
+
 pp = pprint.PrettyPrinter(indent=2)
+def print(args):
+    pp.pprint(args)
+
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -13,18 +18,65 @@ BASE_PATH = os.path.dirname(__file__)
 experimental_wb = os.path.join(BASE_PATH, "Data", "experimental.xlsx")
 calculations_folder = os.path.join(BASE_PATH, "Data", "calculations")
 calculations_wb = os.path.join(BASE_PATH, "Data", "CEBE_Data.xlsx")
-methods = ['mom']
+methods = ["mom"]
 pobj = Parser.ParsedData(experimental_wb, calculations_folder, methods, calculations_wb)
 # pobj.debug = True
-pobj.main(save=True)
+pobj.main(save=False)
 # pp.pprint(pobj.methodToData['mom']['o']['h2o']['D'])
 
 
 # the calculations_wb file can become huge quite quickly, so if you want to check on results
 # of certain molecules of interest, you can use the method below
-mols = set("h2o co co2".split()) # specify molecules you're interested in
-fname = 'o-series' # specify the file name to which this will be saved
-extracted_path = os.path.join(BASE_PATH, 'Data', 'extracts', f'{fname}.xlsx')
-pobj.extract_molecules(mols, extracted_path)
+mols = set("h2o co co2".split())  # specify molecules you're interested in
+fname = "o-series"  # specify the file name to which this will be saved
+extracted_path = os.path.join(BASE_PATH, "Data", "extracts", f"{fname}.xlsx")
+# pobj.extract_molecules(mols, extracted_path)
+
+# --------------- PERFORM EXTRAPOLATION ---------------
+
+eobj = Extrapolation.WholeDataset()
+# eobj.parse_scheme('T-Q-CCSD')
+# eobj.parse_scheme('T-Q-CCSD(T)')
+# eobj.parse_scheme('MP2[D T Q 5]')
+# eobj.parse_scheme('MP2[D T Q]+DifD')
+# eobj.parse_scheme('MP2[D T Q 5]+DifD(T)')
+
+# r1 = eobj.extrapolate_molecule_given_scheme(pobj.methodToData['mom']['o']['h2o'], 'T-Q-CCSD')
+
+# r2 = eobj.extrapolate_molecule_given_scheme(pobj.methodToData['mom']['o']['h2o'], 'T-Q-CCSD(T)')
+
+# r3 = eobj.extrapolate_molecule_given_scheme(pobj.methodToData['mom']['o']['h2o'], 'MP2[T Q 5]')
+
+# r4 = eobj.extrapolate_molecule_given_scheme(pobj.methodToData['mom']['o']['h2o'], 'MP2[T Q 5]+DifD')
+
+# print(f"{r1=}\n{r2=}\n{r3=}\n{r4=}")
+
+# First, let's filter out the molecules we want to use
+atomToMols = {
+    atom.lower(): set(molStr.split()) for atom, molStr in constants.ATOM_TO_MOLS.items()
+}
+
+filteredData = pobj.filter_data_by_molecules(pobj.methodToData, atomToMols)
+filteredData = pobj.filter_by_presence_of_experimental(filteredData)
+# pp.pprint(atomToMols)
+
+# eobj.extrapolate_all_data(
+#     filteredData, schemes=["T-Q-CCSD", "T-Q-5-HF", "MP2[T Q]+DifD(T)"]
+# )
+eobj._create_extrapolation_schemes()
+eobj.debug = False
+# eobj.parse_scheme(scheme='MP2[T Q 5]+DifSTO-3G(T)')
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes['HF'])
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes['CCSD'])
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes['MP2'])
+# pp.pprint(pobj.molToExper)
+eobj.calculate_errors(pobj.molToExper)
+# print(eobj.methodToError['mom']['o']['h2o'])
+eobj.calculate_series_statistics()
+# print(eobj.methodToAtomStats['mom']['o']['T-Q-CCSD'])
+eobj.calculate_overall_statistics()
+# print(eobj.methodToStats['mom']['T-Q-CCSD'])
+# print(eobj.methodToStats['mom']['MP2[D T Q 5]'])
+# print(eobj.methodToStats['mom']['MP2[D T Q 5]+DifD(T)'])
 
 

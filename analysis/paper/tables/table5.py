@@ -1,8 +1,8 @@
-import sys, constants
+import sys, Analysis.constants as constants
 sys.path.append('../../core_excitations') # this allows us to import files from parent directories
 import PRIVATE
 import tools
-import constants
+import Analysis.constants as constants
 import analysis.modules.table 
 import analysis.regression.evaluate
 from openpyxl import load_workbook

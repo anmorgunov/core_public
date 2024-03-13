@@ -1,4 +1,4 @@
-import sys, constants
+import sys, Analysis.constants as constants
 sys.path.append('../../core_excitations') # this allows us to import files from parent directories
 import PRIVATE
 import tools

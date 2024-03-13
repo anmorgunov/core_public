@@ -1,5 +1,5 @@
 # import my_constants as constants
-import constants
+import Analysis.constants as constants
 from openpyxl import load_workbook
 from openpyxl import Workbook
 from openpyxl.styles import Font
