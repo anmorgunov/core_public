@@ -242,26 +242,74 @@ def extrap_err_bars_dtstudy(
 
 
 def extrap_err_bars_summary(
-    atomSchemeStats: AtomSchemeStatsType, save_path: str, do5: bool = True
+    atomSchemeStats: AtomSchemeStatsType, save_path: str, include5: bool = True
 ) -> go.Figure:
     fig = go.Figure()
     styler = Styler()
 
     styler.TICK_SIZE = 20
     styler.AXIS_TITLE_SIZE = 22
-    if do5:
+    if include5:
         atomToNames = {
-            "c": "MP2[D T Q 5] | MP2[D T Q 5]+DifSTO-3G(T) | MP2[D T Q 5]+Dif3-21G(T) | MP2[D T Q 5]+DifD(T) | D-T-Q-CCSD(T)",
-            "n": "MP2[T Q 5] | MP2[T Q 5]+DifSTO-3G | MP2[T Q 5]+Dif3-21G | MP2[T Q 5]+DifD | T-Q-CCSD",
-            "o": "MP2[T Q 5] | MP2[T Q 5]+DifSTO-3G | MP2[T Q 5]+Dif3-21G | MP2[T Q 5]+DifD | T-Q-CCSD",
-            "f": "MP2[T Q 5] | MP2[T Q 5]+DifSTO-3G(T) | MP2[T Q 5]+Dif3-21G(T) | MP2[T Q 5]+DifD(T) | T-Q-CCSD(T)",
+            "c": [
+                "MP2[D T Q 5]",
+                "MP2[D T Q 5]+DifSTO-3G(T)",
+                "MP2[D T Q 5]+Dif3-21G(T)",
+                "MP2[D T Q 5]+DifD(T)",
+                "D-T-Q-CCSD(T)",
+            ],
+            "n": [
+                "MP2[T Q 5]",
+                "MP2[T Q 5]+DifSTO-3G",
+                "MP2[T Q 5]+Dif3-21G",
+                "MP2[T Q 5]+DifD",
+                "T-Q-CCSD",
+            ],
+            "o": [
+                "MP2[T Q 5]",
+                "MP2[T Q 5]+DifSTO-3G",
+                "MP2[T Q 5]+Dif3-21G",
+                "MP2[T Q 5]+DifD",
+                "T-Q-CCSD",
+            ],
+            "f": [
+                "MP2[T Q 5]",
+                "MP2[T Q 5]+DifSTO-3G(T)",
+                "MP2[T Q 5]+Dif3-21G(T)",
+                "MP2[T Q 5]+DifD(T)",
+                "T-Q-CCSD(T)",
+            ],
         }
     else:
         atomToNames = {
-            "c": "MP2[D T Q] | MP2[D T Q]+DifSTO-3G(T) | MP2[D T Q]+Dif3-21G(T) | MP2[D T Q]+DifD(T) | D-T-Q-CCSD(T)",
-            "n": "MP2[T Q] | MP2[T Q]+DifSTO-3G | MP2[T Q]+Dif3-21G | MP2[T Q]+DifD | T-Q-CCSD",
-            "o": "MP2[T Q] | MP2[T Q]+DifSTO-3G | MP2[T Q]+Dif3-21G | MP2[T Q]+DifD | T-Q-CCSD",
-            "f": "MP2[T Q] | MP2[T Q]+DifSTO-3G(T) | MP2[T Q]+Dif3-21G(T) | MP2[T Q]+DifD(T) | T-Q-CCSD(T)",
+            "c": [
+                "MP2[D T Q]",
+                "MP2[D T Q]+DifSTO-3G(T)",
+                "MP2[D T Q]+Dif3-21G(T)",
+                "MP2[D T Q]+DifD(T)",
+                "D-T-Q-CCSD(T)",
+            ],
+            "n": [
+                "MP2[T Q]",
+                "MP2[T Q]+DifSTO-3G",
+                "MP2[T Q]+Dif3-21G",
+                "MP2[T Q]+DifD",
+                "T-Q-CCSD",
+            ],
+            "o": [
+                "MP2[T Q]",
+                "MP2[T Q]+DifSTO-3G",
+                "MP2[T Q]+Dif3-21G",
+                "MP2[T Q]+DifD",
+                "T-Q-CCSD",
+            ],
+            "f": [
+                "MP2[T Q]",
+                "MP2[T Q]+DifSTO-3G(T)",
+                "MP2[T Q]+Dif3-21G(T)",
+                "MP2[T Q]+DifD(T)",
+                "T-Q-CCSD(T)",
+            ],
         }
 
     labels = [
@@ -278,10 +326,9 @@ def extrap_err_bars_summary(
     for i in range(5):  # 5 is the number of schemeNames
         abs_errs = []
         for atom, names in atomToNames.items():
-            abs_errs.extend(atomSchemeStats[atom][names.split(" | ")[i]]["abs_errors"])
+            abs_errs.extend(atomSchemeStats[atom][names[i]]["abs_errors"])
         yVals.append(np.mean(abs_errs))
         yErrs.append(np.std(abs_errs))
-
 
     fig.add_trace(
         create_bar_trace(labels, yVals, "general", yErrs, extrapscale, showlegend=False)
@@ -296,6 +343,223 @@ def extrap_err_bars_summary(
         margin=dict(l=20, r=20, t=30, b=0),
     )
 
-    suffix = "-w5" if do5 else "-no5"
+    suffix = "-w5" if include5 else "-no5"
     styler._save_fig(fig, save_path, "bars_summary" + suffix)
+    return fig
+
+
+def small_basis_study_subplots(
+    atomSchemeStats: AtomSchemeStatsType, save_path: str
+) -> go.Figure:
+    styler = Styler()
+    styler.TICK_SIZE = 12
+    styler.AXIS_TITLE_SIZE = 14
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            f"<b>{t}</b>" for t in ("C-Series", "N-Series", "O-Series", "F-Series")
+        ],
+        vertical_spacing=0.08,
+        horizontal_spacing=0.07,
+    )
+    atomToNames = {
+        "c": [
+            "MP2[D T Q]+DifSTO-3G(T)",
+            "MP2[D T Q]+DifSTO-6G(T)",
+            "MP2[D T Q]+Dif3-21G(T)",
+            "MP2[D T Q]+Dif4-31G(T)",
+            "MP2[D T Q]+Dif6-31G(T)",
+            "MP2[D T Q]+DifD(T)",
+        ],
+        "n": [
+            "MP2[T Q]+DifSTO-3G",
+            "MP2[T Q]+DifSTO-6G",
+            "MP2[T Q]+Dif3-21G",
+            "MP2[T Q]+Dif4-31G",
+            "MP2[T Q]+Dif6-31G",
+            "MP2[T Q]+DifD",
+        ],
+        "o": [
+            "MP2[T Q]+DifSTO-3G",
+            "MP2[T Q]+DifSTO-6G",
+            "MP2[T Q]+Dif3-21G",
+            "MP2[T Q]+Dif4-31G",
+            "MP2[T Q]+Dif6-31G",
+            "MP2[T Q]+DifD",
+        ],
+        "f": [
+            "MP2[T Q]+DifSTO-3G(T)",
+            "MP2[T Q]+DifSTO-6G(T)",
+            "MP2[T Q]+Dif3-21G(T)",
+            "MP2[T Q]+Dif4-31G(T)",
+            "MP2[T Q]+Dif6-31G(T)",
+            "MP2[T Q]+DifD(T)",
+        ],
+    }
+    labels = ["MP2[∞]", "+STO-3G", "+STO-6G", "+3-21G", "+4-31G", "+6-31G", "+D"]
+    colorscale = ["#9d4edd"] * (len(atomToNames["c"]) + 1)
+    for j, atom in enumerate(atomToNames):
+        xVals, yVals, yErrs = [], [], []
+        for i, name in enumerate(atomToNames[atom]):
+            stats = atomSchemeStats[atom][name]
+            xVals.append("+" + name.split("+")[1][3:])
+            yVals.append(stats["MAE"])
+            yErrs.append(stats["STD(AE)"])
+        fig.add_trace(
+            create_bar_trace(
+                labels, yVals, "oxygen", yErrs, colorscale, showlegend=False
+            ),
+            row=1 + j // 2,
+            col=1 + j % 2,
+        )
+
+    fig.update_layout(margin=dict(l=0, r=20, t=30, b=20))
+    styler._update_axes(
+        fig, ytitle="MAE compared with<br>experimental CEBEs (eV)", ydtick=0.1
+    )
+    styler._update_fig(fig)
+    fig["layout"]["xaxis1"].update(showticklabels=False, tickvals=[])
+    fig["layout"]["xaxis2"].update(showticklabels=False, tickvals=[])
+    fig["layout"]["yaxis1"].update(
+        range=[0, 0.65],
+    )
+    fig["layout"]["yaxis2"].update(range=[0, 0.65], title="")
+    fig["layout"]["yaxis3"].update(
+        range=[0, 0.65],
+    )
+    fig["layout"]["yaxis4"].update(range=[0, 0.65], title="")
+
+    styler._save_fig(fig, save_path, "mp2_small")
+    return fig
+
+
+def big_basis_study_subplots(
+    atomSchemeStats: AtomSchemeStatsType, save_path: str
+) -> go.Figure:
+    styler = Styler()
+    styler.TICK_SIZE = 12
+    styler.AXIS_TITLE_SIZE = 14
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            f"<b>{t}</b>" for t in ("C-Series", "N-Series", "O-Series", "F-Series")
+        ],
+        vertical_spacing=0.08,
+        horizontal_spacing=0.07,
+    )
+
+    atomToNames = {
+        "c": [
+            "MP2[D T Q]+DifD(T)",
+            "MP2[D T Q 5]+DifD(T)",
+            "MP2[T Q]+DifD(T)",
+            "MP2[T Q 5]+DifD(T)",
+            "MP2[Q 5]+DifD(T)",
+            "MP2[5]+DifD(T)",
+        ],
+        "n": [
+            "MP2[D T Q]+DifD",
+            "MP2[D T Q 5]+DifD",
+            "MP2[T Q]+DifD",
+            "MP2[T Q 5]+DifD",
+            "MP2[Q 5]+DifD",
+            "MP2[5]+DifD",
+        ],
+        "o": [
+            "MP2[D T Q]+DifD",
+            "MP2[D T Q 5]+DifD",
+            "MP2[T Q]+DifD",
+            "MP2[T Q 5]+DifD",
+            "MP2[Q 5]+DifD",
+            "MP2[5]+DifD",
+        ],
+        "f": [
+            "MP2[D T Q]+DifD(T)",
+            "MP2[D T Q 5]+DifD(T)",
+            "MP2[T Q]+DifD(T)",
+            "MP2[T Q 5]+DifD(T)",
+            "MP2[Q 5]+DifD(T)",
+            "MP2[5]+DifD(T)",
+        ],
+    }
+    colorscale = ["#9d4edd"] * (len(atomToNames["c"]) + 1)
+    labels = [
+        "MP2[D T Q]",
+        "MP2[D T Q 5]",
+        "MP2[T Q]",
+        "MP2[T Q 5]",
+        "MP2[Q 5]",
+        "MP2[5]",
+    ]
+    for j, atom in enumerate(atomToNames):
+        yVals, yErrs = [], []
+        for i, name in enumerate(atomToNames[atom]):
+            stats = atomSchemeStats[atom][name]
+            
+            yVals.append(stats['MAE'])
+            yErrs.append(stats['STD(AE)'])
+        fig.add_trace(
+            create_bar_trace(
+                labels, yVals, "oxygen", yErrs, colorscale, showlegend=False
+            ),
+            row=1 + j // 2,
+            col=1 + j % 2,
+        )
+
+    fig.update_layout(margin=dict(l=0, r=20, t=30, b=20))
+    styler._update_axes(
+        fig, ytitle="MAE compared with<br>experimental CEBEs (eV)", ydtick=0.1
+    )
+    styler._update_fig(fig)
+    fig["layout"]["xaxis1"].update(showticklabels=False, tickvals=[])
+    fig["layout"]["xaxis2"].update(showticklabels=False, tickvals=[])
+    fig["layout"]["yaxis1"].update(
+        range=[0, 0.65],
+    )
+    fig["layout"]["yaxis2"].update(range=[0, 0.65], title="")
+    fig["layout"]["yaxis3"].update(
+        range=[0, 0.65],
+    )
+    fig["layout"]["yaxis4"].update(range=[0, 0.65], title="")
+
+    styler._save_fig(fig, save_path, "mp2_big")
+    return fig
+
+def extrap_err_bars_for_toc(atomSchemeStats: AtomSchemeStatsType, save_path: str) -> go.Figure:
+    fig = go.Figure()
+    styler = Styler()
+
+    styler.TICK_SIZE = 20
+    styler.AXIS_TITLE_SIZE = 22
+
+    atomToNames = {
+        'c': ["MP2[D T Q]", "MP2[D T Q]+DifD(T)", "D-T-Q-CCSD(T)"],
+        'n': ["MP2[T Q]", "MP2[T Q]+DifD", "T-Q-CCSD"],
+        'o': ["MP2[T Q]", "MP2[T Q]+DifD", "T-Q-CCSD"],
+        'f': ["MP2[T Q]", "MP2[T Q]+DifD(T)", "T-Q-CCSD(T)"]
+    }
+    labels = ['MP2[∞]', 'MP2[∞]<br>+δ(D)', 'CCSD[∞]']
+    extrapscale = ['#c77dff'] + ['#9d4edd']*1 + ['#48cae4']*1 
+    
+    yVals, yErrs = [], []
+    for i in range(3):
+        abs_errs = []
+        for atom, names in atomToNames.items():
+            abs_errs.extend(atomSchemeStats[atom][names[i]]['abs_errors'])
+        yVals.append(np.mean(abs_errs))
+        yErrs.append(np.std(abs_errs))
+
+    fig.add_trace(create_bar_trace(labels, yVals, 'general', yErrs, extrapscale, showlegend=False))
+
+    fig.update_yaxes(range=[0, 0.59]) 
+    styler._update_axes(fig, ytitle='MAE compared with<br>experimental CEBEs (eV)', ydtick=0.1)
+    styler._update_fig(fig)
+    fig.update_layout(
+        width=500, height=500,
+        margin=dict(l=20, r=20, t=30, b=0),
+    )
+
+    styler._save_fig(fig, save_path, 'bars_toc')
     return fig

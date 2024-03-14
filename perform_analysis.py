@@ -166,3 +166,7 @@ eobj.calculate_overall_statistics()
 
 for include_pentuple in (True, False):
     CreateFigures.extrap_err_bars_summary(eobj.algoToAtomStats["mom"], figures_path, include_pentuple)
+
+CreateFigures.small_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
+CreateFigures.big_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
+CreateFigures.extrap_err_bars_for_toc(eobj.algoToAtomStats["mom"], figures_path)
