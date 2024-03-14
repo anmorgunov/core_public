@@ -9,6 +9,8 @@ import os
 import pprint
 
 pp = pprint.PrettyPrinter(indent=2)
+
+
 def print(args):
     pp.pprint(args)
 
@@ -21,7 +23,9 @@ experimental_wb = os.path.join(DATA_PATH, "experimental.xlsx")
 calculations_folder = os.path.join(DATA_PATH, "calculations")
 calculations_wb = os.path.join(DATA_PATH, "CEBE_Data.xlsx")
 algorithms = ["mom"]
-pobj = Parser.ParsedData(experimental_wb, calculations_folder, algorithms, calculations_wb)
+pobj = Parser.ParsedData(
+    experimental_wb, calculations_folder, algorithms, calculations_wb
+)
 # pobj.debug = True
 pobj.main(save=False)
 # pp.pprint(pobj.algoToData['mom']['o']['h2o']['D'])
@@ -68,9 +72,9 @@ filteredData = pobj.filter_by_presence_of_experimental(filteredData)
 eobj._create_extrapolation_schemes()
 eobj.debug = False
 # eobj.parse_scheme(scheme='MP2[T Q 5]+DifSTO-3G(T)')
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes['HF'])
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes['CCSD'])
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes['MP2'])
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes["HF"])
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes["CCSD"])
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes["MP2"])
 # pp.pprint(pobj.molToExper)
 eobj.calculate_errors(pobj.molToExper)
 # print(eobj.algorithmToError['mom']['o']['h2o'])
@@ -82,11 +86,19 @@ eobj.calculate_overall_statistics()
 # print(eobj.methodToStats['mom']['MP2[D T Q 5]+DifD(T)'])
 # print(eobj.smallBasisException)
 
-
+pobj.calculate_errors(filteredData)
+pobj.calculate_series_statistics()
+pobj.calculate_overall_statistics()
 
 # --------------- CREATE TABLES ---------------
 
-table1 = CreateTables.SingleZetaResults(filteredData['mom'], pobj.molToExper)
-table1.all_results(save_folder=os.path.join(DATA_PATH, "paper-tables", "singlezeta"))
+table1 = CreateTables.SingleZetaResults(filteredData["mom"], pobj.molToExper)
+table1.all_results(save_folder=os.path.join(DATA_PATH, "paper-tables", "single-zeta"))
 
-# table2 = CreateTables.MethodSummary()
+table2 = CreateTables.MethodSummary(
+    pobj.algoToStats["mom"], pobj.algoToAtomStats["mom"],
+    save_folder=os.path.join(DATA_PATH, "paper-tables", "method-summaries"),
+    show_sample_size=True,
+    isPublication=True,
+)
+table2.all_results()

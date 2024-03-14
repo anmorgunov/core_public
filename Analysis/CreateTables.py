@@ -1,6 +1,11 @@
 from .Modules import LaTeX, Extrapolation, Parser
-from .Modules.Parser import AlgoDataType, ExperDataType, AtomDataType
-from typing import Dict, Set
+from .Modules.Parser import (
+    ExperDataType,
+    AtomDataType,
+    BasisStatsType,
+    AtomBasisStatsType,
+)
+from typing import Dict, Set, List
 import os
 from . import constants
 
@@ -38,9 +43,7 @@ class SingleZetaResults:
         ],
     }
 
-    def __init__(
-        self, atomToData: AtomDataType, molToExper: ExperDataType
-    ):
+    def __init__(self, atomToData: AtomDataType, molToExper: ExperDataType):
         self.atomToData = atomToData
         self.molToExper = molToExper
         self.f = lambda i: f"{i:.2f}"
@@ -74,11 +77,10 @@ class SingleZetaResults:
     def series_table(self, atom: str, basis: str, save_path: str):
         body = self.collect_series(atom, basis)
         caption = f"K-Edge Ionization Energies (in eV) of {atom}-Series in cc-pV{basis}Z/cc-pCV{basis}Z"
-        label = f"{atom.lower()}-{basis.lower()}z"
 
         LaTeX.Table.export_table(
             caption=caption,
-            label=label,
+            label=f"{atom.lower()}-{basis.lower()}z",
             positioning="l " * len(self.basisToHeader[basis]),
             headers=self.basisToHeader[basis],
             body=body,
@@ -93,6 +95,75 @@ class SingleZetaResults:
 
 
 class MethodSummary:
+    col_names = ["Basis", "Method", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
+    basisToMethods = {
+        "D": "UHF MP2 MP2.5 MP3 CCSD CCSD(T)".split(),
+        "T": "UHF MP2 MP2.5 MP3 CCSD CCSD(T)".split(),
+        "Q": "UHF MP2 CCSD CCSD(T)".split(),
+        "5": "UHF MP2".split(),
+    }
 
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        basisToStats: BasisStatsType,
+        atomToBasisStats: AtomBasisStatsType,
+        save_folder: str,
+        show_sample_size: bool = True,
+        isPublication: bool = False,
+    ):
+        self.basisToStats = basisToStats
+        self.atomToBasisStats = atomToBasisStats
+        self.f = lambda i: f"{i:.2f}"
+        self.save_folder = save_folder
+        self.show_sample_size = show_sample_size
+        self.isPublication = isPublication
+
+    def collect_series(self, atom: str, bases: List[str]):
+        _me = lambda x: f"$\Delta${x}" if x != "UHF" else f"$\Delta$HF"
+        body = []
+        f = self.f  # f stands for formatter
+        for basis in bases:
+            if self.isPublication:
+                methods = self.basisToMethods[basis]
+            else:
+                methods = self.atomToBasisStats[atom][basis]
+            for method in methods:
+                stats = self.atomToBasisStats[atom][basis][method]
+                row = [
+                    basis,
+                    _me(method),
+                    f(stats["MSE"]),
+                    f(stats["MAE"]),
+                    f(stats["MedAE"]),
+                    f(stats["MaxAE"]),
+                    f(stats["STD(AE)"]),
+                ]
+                if self.show_sample_size:
+                    row.append(stats["n"])
+                body.append(row)
+        return body
+
+    def series_table(self, atom: str, bases: List[str], save_path: str):
+        body = self.collect_series(atom, bases)
+
+        if self.show_sample_size:
+            self.col_names.append("Sample Size")
+        header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
+        caption = f"Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom}-series"
+        LaTeX.Table.export_table(
+            caption=caption,
+            label=f"summary-{atom.lower()}",
+            positioning="l " * len(header),
+            headers=header,
+            body=body,
+            name=save_path,
+        )
+
+    def all_results(
+        self,
+    ):
+        atoms = "C N O F".split()
+        bases = "D T Q 5".split()
+        for atom in atoms:
+            path = os.path.join(self.save_folder, f"{atom}-summary")
+            self.series_table(atom.lower(), bases, path)

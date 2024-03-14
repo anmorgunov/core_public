@@ -12,6 +12,11 @@ MoleculeDataType = Dict[str, BasisDataType]
 AtomDataType = Dict[str, MoleculeDataType]
 AlgoDataType = Dict[str, AtomDataType]
 
+BasisStatsType = Dict[str, Dict[str, Number]]
+AtomBasisStatsType = Dict[str, BasisStatsType]
+AlgoStatsType = Dict[str, BasisStatsType]
+AlgoAtomStatsType = Dict[str, AtomBasisStatsType]
+
 
 CALC_WB_COLS = {
     "B": "Molecule",
@@ -35,7 +40,7 @@ CALC_WB_COLS = {
 }
 
 
-def get_next_col(col:str, prefix:Optional[str]=None)->str:
+def get_next_col(col: str, prefix: Optional[str] = None) -> str:
     if prefix is None:
         prefix = ""
     strings = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -73,7 +78,7 @@ class ParsedData:
 
         self.saveWB = Workbook()
 
-        self.molToExper:ExperDataType = {}
+        self.molToExper: ExperDataType = {}
         self.doAverageExperimental = do_average_experimental
 
         self.algorithms = algorithms
@@ -112,9 +117,9 @@ class ParsedData:
             if self.debug:
                 print(f"{atoms=}")
             for atom in atoms:
-                atomToData:AtomDataType = self.algoToData.setdefault(algorithm, {}).setdefault(
-                    atom, {}
-                )
+                atomToData: AtomDataType = self.algoToData.setdefault(
+                    algorithm, {}
+                ).setdefault(atom, {})
 
                 if self.debug:
                     print(f"{self.algoToData=}, {atomToData=}")
@@ -136,9 +141,9 @@ class ParsedData:
                     if self.debug:
                         print(f"{bases=}")
                     for basis in bases:
-                        basisToData:BasisDataType = atomToData.setdefault(molecule, {}).setdefault(
-                            basis, {}
-                        )
+                        basisToData: BasisDataType = atomToData.setdefault(
+                            molecule, {}
+                        ).setdefault(basis, {})
                         basPath = os.path.join(molPath, basis)
                         files = os.listdir(basPath)
                         if self.debug:
@@ -217,7 +222,7 @@ class ParsedData:
 
         r = 3
         for col, name in CALC_WB_COLS.items():
-            ws[col+str(r)] = name
+            ws[col + str(r)] = name
 
         for col in self.cols.split(" "):
             ws[col + str(r)].font = self.font
@@ -270,12 +275,11 @@ class ParsedData:
 
         self.saveWB.save(self.savePath)
 
-    def extract_molecules(self, mols:Set[str], save_path:str):
-        """
-        """
+    def extract_molecules(self, mols: Set[str], save_path: str):
+        """ """
         new_wb = Workbook()
         new_ws = new_wb["Sheet"]
-        
+
         wb = load_workbook(self.savePath)
         ws = wb["Sheet"]
 
@@ -300,24 +304,108 @@ class ParsedData:
             row += 1
         new_wb.save(save_path)
 
-    def filter_data_by_molecules(self, algoToData:AlgoDataType, atomToMols:Dict[str, Set[str]]) -> AlgoDataType:
+    def filter_data_by_molecules(
+        self, algoToData: AlgoDataType, atomToMols: Dict[str, Set[str]]
+    ) -> AlgoDataType:
         filtered_algoToData = {}
         for algorithm, atomData in algoToData.items():
             for atom, molData in atomData.items():
                 for molecule, basData in molData.items():
                     if molecule in atomToMols[atom]:
-                        filtered_algoToData.setdefault(algorithm, {}).setdefault(atom, {})[molecule] = basData
+                        filtered_algoToData.setdefault(algorithm, {}).setdefault(
+                            atom, {}
+                        )[molecule] = basData
                         filtered_algoToData[algorithm][atom][molecule] = basData
         return filtered_algoToData
 
-    def filter_by_presence_of_experimental(self, algoToData:AlgoDataType) -> AlgoDataType:
+    def filter_by_presence_of_experimental(
+        self, algoToData: AlgoDataType
+    ) -> AlgoDataType:
         filtered_algoToData = {}
         for algorithm, atomData in algoToData.items():
             for atom, molData in atomData.items():
                 for molecule, basData in molData.items():
                     if molecule in self.molToExper:
-                        filtered_algoToData.setdefault(algorithm, {}).setdefault(atom, {})[molecule] = basData
+                        filtered_algoToData.setdefault(algorithm, {}).setdefault(
+                            atom, {}
+                        )[molecule] = basData
         return filtered_algoToData
+
+    def calculate_errors(self, algoToData: AlgoDataType):
+        valid_keys = {"UHF", "MP2", "MP2.5", "MP3", "CCSD", "CCSD(T)"}
+        algoToError = {}
+        for algorithm, atomData in algoToData.items():
+            for atom, molData in atomData.items():
+                for molecule, basData in molData.items():
+                    if molecule not in self.molToExper:
+                        continue
+                    for bas, methodData in basData.items():
+                        for key, value in methodData.items():
+                            if key not in valid_keys:
+                                continue
+                            algoToError.setdefault(algorithm, {}).setdefault(
+                                atom, {}
+                            ).setdefault(molecule, {}).setdefault(bas, {})[key] = (
+                                value - self.molToExper[molecule]
+                            )
+        self.algoToError = algoToError
+
+    def calculate_series_statistics(self):
+        assert hasattr(self, "algoToError"), "You must call calculate_errors first"
+        algoToAtomErrors = {}
+        for algorithm, atomData in self.algoToError.items():
+            for atom, molData in atomData.items():
+                for basData in molData.values():
+                    for bas, methodData in basData.items():
+                        for method, value in methodData.items():
+                            algoToAtomErrors.setdefault(algorithm, {}).setdefault(
+                                atom, {}
+                            ).setdefault(bas, {}).setdefault(method, []).append(value)
+        algoToAtomStats:AlgoAtomStatsType = {}
+        for algorithm, atomData in algoToAtomErrors.items():
+            for atom, basData in atomData.items():
+                for bas, methodData in basData.items():
+                    for method, error_list in methodData.items():
+                        errors = np.array(error_list)
+                        abs_errs = np.abs(errors)
+                        algoToAtomStats.setdefault(algorithm, {}).setdefault(
+                            atom, {}
+                        ).setdefault(bas, {})[method] = {
+                            "MSE": np.mean(errors),
+                            "MAE": np.mean(abs_errs),
+                            "MedAE": np.median(abs_errs),
+                            "MaxAE": np.max(abs_errs),
+                            "STD(AE)": np.std(abs_errs),
+                            "n": len(errors),
+                        }
+        self.algoToAtomStats = algoToAtomStats
+
+    def calculate_overall_statistics(self):
+        assert hasattr(self, "algoToError"), "You must call calculate_errors first"
+        algoToErrors = {}
+        for algorithm, atomData in self.algoToError.items():
+            for molData in atomData.values():
+                for basData in molData.values():
+                    for bas, methodData in basData.items():
+                        for method, value in methodData.items():
+                            algoToErrors.setdefault(algorithm, {}).setdefault(
+                                bas, {}
+                            ).setdefault(method, []).append(value)
+        algoToStats:AlgoStatsType = {}
+        for algorithm, basData in algoToErrors.items():
+            for bas, methodData in basData.items():
+                for method, error_list in methodData.items():
+                    errors = np.array(error_list)
+                    abs_errs = np.abs(errors)
+                    algoToStats.setdefault(algorithm, {}).setdefault(bas, {})[method] = {
+                        "MSE": np.mean(errors),
+                        "MAE": np.mean(abs_errs),
+                        "MedAE": np.median(abs_errs),
+                        "MaxAE": np.max(abs_errs),
+                        "STD(AE)": np.std(abs_errs),
+                        "n": len(errors),
+                    }
+        self.algoToStats = algoToStats
 
     def main(self, save: bool = True):
         self._parse_experimental()
@@ -325,6 +413,7 @@ class ParsedData:
         self._calculate_mp25()
         if save:
             self._update_calculation_wb()
+
 
 if __name__ == "__main__":
     # perform_parsing()
