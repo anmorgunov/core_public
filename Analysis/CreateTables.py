@@ -8,6 +8,7 @@ from .Modules.Parser import (
 from .Modules.Extrapolation import SchemeStatsType, AtomSchemeStatsType
 from typing import Dict, Set, List, Iterable, Callable
 import os
+from openpyxl import load_workbook
 from . import constants
 
 BASE_PATH = os.path.dirname(__file__)
@@ -283,3 +284,93 @@ class ExtrapSchemeSummary:
             path = os.path.join(self.save_folder, f"{atom}-summary")
             self.series_table(atom.lower(), scheme_factory(), path)
         self.all_table(scheme_factory(), os.path.join(self.save_folder, "all-summary"))
+
+
+class UsedGeometries:
+
+    def __init__(self, geom_wb:str, save_folder:str):
+        self.geom_wb = load_workbook(geom_wb)
+        self.save_folder = save_folder
+
+    def _get_formula(self, mol: str):
+        return constants.FNAME_TO_MOLS[mol]["formula"]
+
+    def _render_mol(self, mol: str):
+        return constants.FNAME_TO_MOLS[mol]["latex"]
+
+    def parse_geometries(self, relevantMols:Dict[str, Set[str]]):
+        methodToAtomToMols = {}
+        methodToBasisToMols = {}
+        ws = self.geom_wb['Sheet1']
+        row = 2
+        while True:
+            if ws['B'+str(row)].value is None and ws['B'+str(row+1)].value is None:
+                break
+            if ws['B'+str(row)].value is None: 
+                row += 1
+                continue
+            atom = ws['B'+str(row)].value
+            if atom not in relevantMols.keys():
+                row += 1
+                continue
+            molecule = ws['C'+str(row)].value
+            if molecule not in relevantMols[atom]: 
+                row += 1
+                continue
+            method = ws['D'+str(row)].value
+            basis = ws['E'+str(row)].value if ws['E'+str(row)].value is not None else 'exp'
+            methodToAtomToMols.setdefault(method, {}).setdefault(atom, {}).setdefault(basis, []).append(molecule)
+            methodToBasisToMols.setdefault(method, {}).setdefault(basis, set()).add(self._get_formula(molecule))
+            row += 1
+        self.methodToAtomToBasisToMols = methodToAtomToMols
+        self.methodToBasisToMols = methodToBasisToMols
+
+    def summary(self, save_path:str):
+        mols = list(sorted(self.methodToBasisToMols['exp']['exp']))
+        self.methodToBasisToMols.setdefault('exp1', {})['exp1'] = mols[:len(mols)//2]
+        self.methodToBasisToMols.setdefault('exp2', {})['exp2'] = mols[len(mols)//2:]
+        caption = f'Molecules for which experimental geometries were available'
+        header = ['exp1', 'exp2', 'MP2(Full)', 'RI-MP2']
+        positioning = 'p{0.30\linewidth} | p{0.30\linewidth} | p{0.30\linewidth} | p{0.30\linewidth}'
+        body = []
+        for j, method in enumerate(header):   
+            i = 0     
+            for basis in self.methodToBasisToMols[method]:
+                if basis not in {'exp', 'exp1', 'exp2'}:
+                    if i >= len(body):
+                        body.append([])
+                    body[i].append("\\textit{%s}" % basis)
+                    i+=1
+                for molecule in sorted(self.methodToBasisToMols[method][basis]):
+                    cell = "\ch{%s}" % molecule
+                    if i >= len(body):
+                        body.append([])
+                    body[i].append(cell)
+                    i+=1
+        
+                cell = "(%s molecules)" % len(self.methodToBasisToMols[method][basis])
+                if i >= len(body):
+                    body.append([])
+                body[i].append(cell)
+                i+=1
+
+            if j > 0:
+                if i < len(body):
+                    while i < len(body):
+                        body[i].append(' ')
+                        i += 1
+
+        LaTeX.Table.export_table(
+            caption=caption,
+            label='geom-summary',
+            positioning=positioning,
+            headers=header,
+            body=body,
+            name=save_path,
+        )
+
+
+    def main(self, relevantMols:Dict[str, Set[str]]):
+        self.parse_geometries(relevantMols)
+        path = os.path.join(self.save_folder, "geom-summary")
+        self.summary(path)

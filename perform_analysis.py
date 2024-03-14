@@ -96,7 +96,8 @@ table1 = CreateTables.SingleZetaResults(filteredData["mom"], pobj.molToExper)
 table1.all_results(save_folder=os.path.join(DATA_PATH, "paper-tables", "single-zeta"))
 
 table2 = CreateTables.MethodSummary(
-    pobj.algoToStats["mom"], pobj.algoToAtomStats["mom"],
+    pobj.algoToStats["mom"],
+    pobj.algoToAtomStats["mom"],
     save_folder=os.path.join(DATA_PATH, "paper-tables", "method-summaries"),
     show_sample_size=False,
     isPublication=True,
@@ -104,11 +105,22 @@ table2 = CreateTables.MethodSummary(
 table2.all_results()
 
 table3 = CreateTables.ExtrapSchemeSummary(
-    eobj.algoToStats['mom'], eobj.algoToAtomStats['mom'],
+    eobj.algoToStats["mom"],
+    eobj.algoToAtomStats["mom"],
     save_folder=os.path.join(DATA_PATH, "paper-tables", "extrap-summaries"),
     show_sample_size=False,
     isPublication=True,
 )
 # print(eobj.algoToAtomStats['mom']['o'])
-eobj._schemeIterKeys = ['HF', 'CCSD', 'MP2']
+eobj._schemeIterKeys = ["HF", "CCSD", "MP2"]
 table3.results_for_schemes(scheme_factory=eobj.scheme_generator)
+
+table4 = CreateTables.UsedGeometries(
+    geom_wb=os.path.join(DATA_PATH, "geometriesDB.xlsx"),
+    save_folder=os.path.join(DATA_PATH, "paper-tables", "geometries"),
+)
+relevantMols = {
+    atom: set(molData.keys()) for atom, molData in filteredData["mom"].items()
+}
+
+table4.main(relevantMols)

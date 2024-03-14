@@ -19,7 +19,11 @@ class Table:
                 f.write(''.join(printrow(header)))
             assert len(positioning.split()) == len(header), 'You must specify the alignment of each column'
         else:
-            assert len(positioning.split()) == len(headers), 'You must specify the alignment of each column'
+            if '|' in positioning:
+                splitted = positioning.split(' | ')
+            else:
+                splitted = positioning.split()
+            assert len(splitted) == len(headers), 'You must specify the alignment of each column'
             f.write(''.join(printrow(headers)))
         f.write('    \hline\n')
         for row in body:
