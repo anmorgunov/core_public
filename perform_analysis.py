@@ -127,41 +127,84 @@ relevantMols = {
 table4.main(relevantMols)
 
 # --------------- CREATE FIGURES ---------------
-CreateFigures._manual_delay()
+# CreateFigures._manual_delay()
 
 figures_path = os.path.join(DATA_PATH, "paper-figures")
-CreateFigures.method_error_bars_general(pobj.algoToStats["mom"], figures_path)
-CreateFigures.method_error_bars_series(pobj.algoToAtomStats["mom"], figures_path)
+# CreateFigures.method_error_bars_general(pobj.algoToStats["mom"], figures_path)
+# CreateFigures.method_error_bars_series(pobj.algoToAtomStats["mom"], figures_path)
 
 ccsdNames = "D-T-Q-CCSD D-T-Q-CCSD(T) T-Q-CCSD T-Q-CCSD(T)".split()
 ccsdColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
 
-CreateFigures.extrap_err_bars_dtstudy(
-    eobj.algoToAtomStats["mom"], ccsdNames, ccsdColors, figures_path
-)
-CreateFigures.extrap_err_bars_dtstudy_general(
-    eobj.algoToStats["mom"], ccsdNames, ccsdColors, figures_path
-)
+# CreateFigures.extrap_err_bars_dtstudy(
+#     eobj.algoToAtomStats["mom"], ccsdNames, ccsdColors, figures_path
+# )
+# CreateFigures.extrap_err_bars_dtstudy_general(
+#     eobj.algoToStats["mom"], ccsdNames, ccsdColors, figures_path
+# )
 
 
 mp2Colors = ["#e0aaff", "#c77dff", "#9d4edd", "#7b2cbf"]
-mp2_no5 = "MP2[D T Q]+DifD | MP2[D T Q]+DifD(T) | MP2[T Q]+DifD | MP2[T Q]+DifD(T)".split(' | ')
-mp2_w5 = "MP2[D T Q 5]+DifD | MP2[D T Q 5]+DifD(T) | MP2[T Q 5]+DifD | MP2[T Q 5]+DifD(T)".split(' | ')
-CreateFigures.extrap_err_bars_dtstudy(
-    eobj.algoToAtomStats["mom"], mp2_no5, mp2Colors, figures_path, suffix="-mp2-no5"
+mp2_no5 = (
+    "MP2[D T Q]+DifD | MP2[D T Q]+DifD(T) | MP2[T Q]+DifD | MP2[T Q]+DifD(T)".split(
+        " | "
+    )
 )
-CreateFigures.extrap_err_bars_dtstudy(
-    eobj.algoToAtomStats["mom"], mp2_w5, mp2Colors, figures_path, suffix="-mp2-w5"
+mp2_w5 = "MP2[D T Q 5]+DifD | MP2[D T Q 5]+DifD(T) | MP2[T Q 5]+DifD | MP2[T Q 5]+DifD(T)".split(
+    " | "
 )
+# CreateFigures.extrap_err_bars_dtstudy(
+#     eobj.algoToAtomStats["mom"], mp2_no5, mp2Colors, figures_path, suffix="-mp2-no5"
+# )
+# CreateFigures.extrap_err_bars_dtstudy(
+#     eobj.algoToAtomStats["mom"], mp2_w5, mp2Colors, figures_path, suffix="-mp2-w5"
+# )
 
 eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
 eobj.calculate_errors(pobj.molToExper)
 eobj.calculate_series_statistics()
 eobj.calculate_overall_statistics()
 
-for include_pentuple in (True, False):
-    CreateFigures.extrap_err_bars_summary(eobj.algoToAtomStats["mom"], figures_path, include_pentuple)
+# for include_pentuple in (True, False):
+#     CreateFigures.extrap_err_bars_summary(eobj.algoToAtomStats["mom"], figures_path, include_pentuple)
 
-CreateFigures.small_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
-CreateFigures.big_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
-CreateFigures.extrap_err_bars_for_toc(eobj.algoToAtomStats["mom"], figures_path)
+# CreateFigures.small_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
+# CreateFigures.big_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
+# CreateFigures.extrap_err_bars_for_toc(eobj.algoToAtomStats["mom"], figures_path)
+
+
+# ----- Correlation Figures
+
+# for include_pentuple in (True, False):
+#     CreateFigures.correlate_extrapolation_summary(
+#         eobj.algoToCBS["mom"], figures_path, include_pentuple
+#     )
+
+ccColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
+mpColors = ["#e0aaff", "#c77dff", "#9d4edd", "#7b2cbf"]
+dStudy_xTitle = "Error from extrapolations<br>including double-zeta basis"
+dStudy_yTitle = "Error from extrapolations<br>excluding double-zeta basis"
+for dEffect, suffix, axrange in (
+    (["D-T-Q-CCSD", "T-Q-CCSD"], "_dstudy-cc", [-0.79, 0.79]),
+    (["D-T-Q-CCSD(T)", "T-Q-CCSD(T)"], "_dstudy-cc-triples", [-1.09, 0.59]),
+    (["MP2[D T Q]+DifD", "MP2[T Q]+DifD"], "_dstudy-mp", [-0.79, 0.79]),
+    (["MP2[D T Q]+DifD(T)", "MP2[T Q]+DifD(T)"], "_dstudy-mp-triples", [-1.09, 0.59]),
+    (["T-Q-CCSD", "T-Q-CCSD(T)"], "_tstudy-cc", [-0.79, 0.79]),
+    (["D-T-Q-CCSD", "D-T-Q-CCSD(T)"], "_tstudy-cc-double", [-1.09, 0.59]),
+    (["MP2[T Q]+DifD", "MP2[T Q]+DifD(T)"], '_tstudy-mp', [-0.79, 0.79]),
+    (["MP2[D T Q]+DifD", "MP2[D T Q]+DifD(T)"], '_tstudy-mp-double', [-1.09, 0.59])
+):
+    if "mp" in suffix:
+        colors = mpColors
+    else:
+        colors = ccColors
+    # CreateFigures.correlate_study(
+    #     eobj.algoToAtomStats["mom"],
+    #     dEffect,
+    #     xtitle=dStudy_xTitle,
+    #     ytitle=dStudy_yTitle,
+    #     axrange=axrange,
+    #     suffix=suffix,
+    #     colors=colors,
+    #     save_path=figures_path,
+    # )

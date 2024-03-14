@@ -10,6 +10,10 @@ AlgoStatsType = Dict[str, SchemeStatsType]
 AtomSchemeStatsType = Dict[str, Dict[str, SchemeStatsType]]
 AlgoAtomStatsType = Dict[str, AtomSchemeStatsType]
 
+SchemeResultType = Dict[str, Optional[Number]]
+AtomMolDataType = Dict[str, Dict[str, SchemeResultType]]
+AlgoDataType = Dict[str, AtomMolDataType]
+
 def rounder(dig):
     def rounder_to_dig(float):
         return format(np.around(float, dig), f".{dig}f")
@@ -68,7 +72,7 @@ def parse_scheme(scheme: str) -> Tuple[str, List[str], str, bool]:
 
 def extrapolate_molecule_given_scheme(
     basisData: BasisDataType, scheme: str
-) -> Optional[Dict[str, Optional[Number]]]:
+) -> Optional[SchemeResultType]:
     method, bases, corrBasis, corrTriples = parse_scheme(scheme)
     if method == "HF":
         method = "UHF"
@@ -116,7 +120,7 @@ class WholeDataset:
         """
         Initialization
         """
-        self.algoToCBS = {}
+        self.algoToCBS:AlgoDataType = {}
         self.smallBasisException = {}
         self.debug = False
 
@@ -181,6 +185,7 @@ class WholeDataset:
                         "MaxAE": np.max(abs_errs),
                         "STD(AE)": np.std(abs_errs),
                         "n": len(errors),
+                        "errors": errors,
                         "abs_errors": abs_errs,
                     }
         self.algoToAtomStats = algoToAtomStats
@@ -208,6 +213,7 @@ class WholeDataset:
                     "MaxAE": np.max(abs_errs),
                     "STD(AE)": np.std(abs_errs),
                     "n": len(errors),
+                    "errors": errors,
                     "abs_errors": abs_errs,
                 }
         self.algoToStats = algoToStats
