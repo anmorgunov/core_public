@@ -5,6 +5,7 @@ from Analysis.Modules import Parser
 from Analysis.Modules import Extrapolation
 from Analysis import CreateTables
 from Analysis import CreateFigures
+from Analysis import Timing
 
 import os
 import pprint
@@ -191,8 +192,8 @@ for dEffect, suffix, axrange in (
     (["MP2[D T Q]+DifD(T)", "MP2[T Q]+DifD(T)"], "_dstudy-mp-triples", [-1.09, 0.59]),
     (["T-Q-CCSD", "T-Q-CCSD(T)"], "_tstudy-cc", [-0.79, 0.79]),
     (["D-T-Q-CCSD", "D-T-Q-CCSD(T)"], "_tstudy-cc-double", [-1.09, 0.59]),
-    (["MP2[T Q]+DifD", "MP2[T Q]+DifD(T)"], '_tstudy-mp', [-0.79, 0.79]),
-    (["MP2[D T Q]+DifD", "MP2[D T Q]+DifD(T)"], '_tstudy-mp-double', [-1.09, 0.59])
+    (["MP2[T Q]+DifD", "MP2[T Q]+DifD(T)"], "_tstudy-mp", [-0.79, 0.79]),
+    (["MP2[D T Q]+DifD", "MP2[D T Q]+DifD(T)"], "_tstudy-mp-double", [-1.09, 0.59]),
 ):
     if "mp" in suffix:
         colors = mpColors
@@ -208,3 +209,11 @@ for dEffect, suffix, axrange in (
     #     colors=colors,
     #     save_path=figures_path,
     # )
+
+
+# --------------- ANALYZE TIMING ---------------
+
+TimingObj = Timing.Timer(
+    calc_path=os.path.join(DATA_PATH, "calculations", "mom"), atoms={"c", "n", "o", "f"}
+)
+TimingObj.main(save_path=DATA_PATH)
