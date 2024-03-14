@@ -62,72 +62,6 @@ class Figures(Graph):
             return self.rounder(threshold+2)(number)
         return sci
 
-    def method_error_bars_general(self, interact=False, suffix=''):
-        fig = go.Figure()
-        self.AXIS_TITLE_SIZE = 24
-        self.TICK_SIZE = 24
-        self.LEGEND_SIZE = 22
-        bases = ['D', 'T', 'Q', '5']
-        atoms = ['C', 'N', 'O', 'F']
-        data = self.evalObj.compare_experimental(atoms)
-        basisToStats = self.evalObj.analyze_deviations(data)
-        for i, method in enumerate(self.methodToBases):
-            yVals, yErrs = [], []
-            for basis in bases:
-                if basis not in self.methodToBases[method]: continue
-                meanAE = basisToStats[basis][method]['meanAE']
-                std = basisToStats[basis][method]['std']
-                yVals.append(meanAE)
-                yErrs.append(std)
-            fig.add_trace(self.create_bar_trace(bases, yVals, self.methodToLabel[method], yErrs, self.methodscale[i]))
-        fig.update_yaxes(range=[0, 2.19])
-        self._update_axes(fig, ytitle='MAE compared with<br>experimental CEBEs (eV)', xtitle="Basis Set", ydtick=0.2)
-        self._update_fig(fig)
-        fig.update_layout(barmode='group', width=720, height=490)
-        fig.update_layout(
-            margin=dict(l=30, r=20, t=10, b=0),
-            legend=dict(yanchor="bottom", y=0.91, xanchor="left", x=0.20, orientation='h', bgcolor='rgba(0,0,0,0)', title_font_family=self.FONT, font=dict(size=self.LEGEND_SIZE))
-        )
-        if interact:
-            fig.show()
-        else:
-            self._save_fig(fig, 'methods_bars_all'+suffix)
-
-    def method_error_bars_series(self, interact=False, suffix=''):
-        self.AXIS_TITLE_SIZE = 14
-        self.TICK_SIZE = 12
-        self.LEGEND_SIZE = 16
-        fig = make_subplots(rows=2, cols=2, subplot_titles=[f"<b>{t}</b>" for t in ("C-Series", "N-Series", "O-Series", "F-Series")], vertical_spacing=0.08, horizontal_spacing=0.07)
-        bases = ['D', 'T', 'Q', '5']
-        atoms = ['C', 'N', 'O', 'F']
-        for j, atom in enumerate(atoms):
-            showLegend = True if j == 0 else False
-            basisToStats = self.evalObj.analyze_deviations(self.evalObj.compare_experimental([atom,]))
-            for i, method in enumerate(self.methodToBases):
-                yVals, yErrs = [], []
-                for basis in bases:
-                    if basis not in self.methodToBases[method]: continue
-                    meanAE = basisToStats[basis][method]['meanAE']
-                    std = basisToStats[basis][method]['std']
-                    yVals.append(meanAE)
-                    yErrs.append(std)
-                fig.add_trace(self.create_bar_trace(bases, yVals, self.methodToLabel[method], yErrs, self.methodscale[i], showLegend), row=1+j//2,col = 1+j%2)
-        fig.update_yaxes(range=[0, 2.39])
-        self._update_axes(fig, ytitle='MAE compared with<br>experimental CEBEs (eV)', ydtick=0.4)
-        self._update_fig(fig)
-        fig.update_layout(barmode='group')
-        fig['layout']['yaxis2'].update(title='')
-        fig['layout']['yaxis4'].update(title='')
-        fig['layout']['xaxis1'].update(title='', tickvals=[])
-        fig['layout']['xaxis2'].update(title='', tickvals=[])
-        fig.update_yaxes(ticksuffix = "")
-        fig.update_layout(
-            margin=dict(l=0, r=20, t=30, b=20),
-            legend=dict(yanchor="bottom", y=-0.15, xanchor="left", x=0.15, orientation='h', bgcolor='rgba(0,0,0,0)', title_font_family=self.FONT, font=dict(size=self.LEGEND_SIZE))
-        )
-        if interact: fig.show()
-        else: self._save_fig(fig, 'methods_bars_series'+suffix)
-
     def extrap_err_bars_general(self, interact=False, suffix=''):
         fig = go.Figure()
         atoms = ['C', 'N', 'O', 'F']
@@ -193,53 +127,7 @@ class Figures(Graph):
         if interact: fig.show()
         else: self._save_fig(fig, 'bars_toc'+suffix)
 
-    def extrap_err_bars_with_bad(self, interact=False, suffix='', do5=True):
-        fig = go.Figure()
-        atoms = ['C', 'N', 'O', 'F']
-        self.TICK_SIZE = 20
-        self.AXIS_TITLE_SIZE = 22
-        if do5: 
-            atomToNames = {
-                'C': ["MP2(D T Q 5)", "MP2(D T Q 5)+DifSTO-3G(T)", "MP2(D T Q 5)+Dif3-21G(T)", "MP2(D T Q 5)+DifD(T)", "D-T-Q-CCSD(T)"],
-                'N': ["MP2(T Q 5)", "MP2(T Q 5)+DifSTO-3G", "MP2(T Q 5)+Dif3-21G", "MP2(T Q 5)+DifD", "T-Q-CCSD"],
-                'O': ["MP2(T Q 5)", "MP2(T Q 5)+DifSTO-3G", "MP2(T Q 5)+Dif3-21G", "MP2(T Q 5)+DifD", "T-Q-CCSD"],
-                'F': ["MP2(T Q 5)", "MP2(T Q 5)+DifSTO-3G(T)", "MP2(T Q 5)+Dif3-21G(T)", "MP2(T Q 5)+DifD(T)", "T-Q-CCSD(T)"]
-            }
-        else:
-            atomToNames = {
-                'C': ["MP2(D T Q)", "MP2(D T Q)+DifSTO-3G(T)", "MP2(D T Q)+Dif3-21G(T)", "MP2(D T Q)+DifD(T)", "D-T-Q-CCSD(T)"],
-                'N': ["MP2(T Q)", "MP2(T Q)+DifSTO-3G", "MP2(T Q)+Dif3-21G", "MP2(T Q)+DifD", "T-Q-CCSD"],
-                'O': ["MP2(T Q)", "MP2(T Q)+DifSTO-3G", "MP2(T Q)+Dif3-21G", "MP2(T Q)+DifD", "T-Q-CCSD"],
-                'F': ["MP2(T Q)", "MP2(T Q)+DifSTO-3G(T)", "MP2(T Q)+Dif3-21G(T)", "MP2(T Q)+DifD(T)", "T-Q-CCSD(T)"]
-            }
-        # names = ["MP2(T Q 5)+DifSTO-3G", "MP2(T Q 5)+DifSTO-3G(T)", "MP2(T Q 5)+Dif3-21G", "MP2(T Q 5)+Dif3-21G(T)", "MP2(T Q 5)+DifD", "MP2(T Q 5)+DifD(T)", "T-Q-CCSD", "T-Q-CCSD(T)"]
-        labels = ['MP2[∞]', 'MP2[∞]<br>+δ(STO-3G)', 'MP2[∞]<br>+δ(3-21G)', 'MP2[∞]<br>+δ(D)', 'CCSD[∞]']
-        extrapscale = ['#c77dff'] + ['#9d4edd']*3 + ['#48cae4']*1 # '#E0AAFF', '#48cae4', '#9d4edd', '#4895ef', '#9d4edd', '#4895ef']
-        
-        devs = [[] for _ in range(len(atomToNames['C']))]
-        for atom, names in atomToNames.items():
-            self.extrapObj.fill_dictionaries(names, [atom])
-            nameToErr = self.extrapObj.nameToErrors
-            for i, name in enumerate(names):
-                devs[i].extend([abs(err) for err in nameToErr[name]['raw']])
-                # yVals.append(sum([float(nameToErr[name]['MAE']) for name in names])/len(names))
-                # yErrs.append(sum([float(nameToErr[name]['STD(AE)']) for name in names])/len(names))
-
-        yVals, yErrs = [], []
-        for devList in devs:
-            yVals.append(np.mean(devList))
-            yErrs.append(np.std(devList))
-        
-        fig.add_trace(self.create_bar_trace(labels, yVals, 'general', yErrs, extrapscale, showlegend=False))
-
-        fig.update_yaxes(range=[0, 0.59]) 
-        self._update_axes(fig, ytitle='MAE compared with<br>experimental CEBEs (eV)', ydtick=0.1)#ydtick=0.1
-        self._update_fig(fig)
-        fig.update_layout(
-            margin=dict(l=20, r=20, t=30, b=0),
-        )
-        if interact: fig.show()
-        else: self._save_fig(fig, 'bars_summary'+suffix)
+    
 
     def extrap_err_bars_dstudy(self, dEffect, interact=False, suffix='', extrapscale = ['#64b5f6', '#1976d2']):
         self.TICK_SIZE = 12
@@ -338,71 +226,6 @@ class Figures(Graph):
         if interact: fig.show()
         else: self._save_fig(fig, 'bars_tstudy'+suffix)
 
-    def extrap_err_bars_dtstudy_general(self, dtEffect, interact=False, suffix='', extrapscale = ['#90caf9', '#64b5f6', '#2196f3', '#1976d2']):
-        self.TICK_SIZE = 12
-        self.AXIS_TITLE_SIZE = 14
-        fig = go.Figure()
-        atoms = ['C', 'N', 'O', 'F']
-        names = ["MP2(D T Q 5)+DifD", "D-T-Q-CCSD", "MP2(T Q 5)+DifD", "T-Q-CCSD", "MP2(D T Q 5)+DifD(T)", "D-T-Q-CCSD(T)", "MP2(T Q 5)+DifD(T)", "T-Q-CCSD(T)"]
-        # tEffect = [["MP2(T Q 5)+DifD", "T-Q-CCSD"], ["MP2(D T Q 5)+DifD", "D-T-Q-CCSD"], ["MP2(T Q 5)+DifD(T)", "T-Q-CCSD(T)"], ["MP2(D T Q 5)+DifD(T)", "D-T-Q-CCSD(T)"]]
-        labels = ["D & no (T)", "D & (T)", "no D & no (T)", "no D & (T)"]
-        # extrapscale = ['#0077b6', '#48cae4',] # '#E0AAFF', '#48cae4', '#9d4edd', '#4895ef', '#9d4edd', '#4895ef']
-        # extrapscale = #['#2196f3', '#1e88e5', '#1976d2', '#1565c0'] #['#bbdefb', '#90caf9', '#64b5f6', '#42a5f5',]
-        
-        self.extrapObj.fill_dictionaries(self.extrapObj.all, atoms)
-        nameToErr = self.extrapObj.nameToErrors
-        yVals, yErrs = [], []
-        for names in dtEffect:
-            yVals.append(sum([float(nameToErr[name]['MAE']) for name in names])/len(names))
-            yErrs.append(sum([float(nameToErr[name]['STD(AE)']) for name in names])/len(names))
-        fig.add_trace(self.create_bar_trace(labels, yVals, 'general', yErrs, extrapscale, showlegend=False))
-
-        fig.update_yaxes(range=[0, 0.69]) 
-        fig.update_layout(
-            margin=dict(l=10, r=20, t=30, b=0),
-            width=720, height=490
-        )
-        self._update_axes(fig, ytitle='Error compared to exp. (eV)', ydtick=0.1)#ydtick=0.1
-        self._update_fig(fig)
-        if interact: fig.show()
-        else: self._save_fig(fig, 'bars_dtstudy_general'+suffix)
-
-    def extrap_err_bars_dtstudy(self, dtEffect, interact=False, suffix='', extrapscale = ['#90caf9', '#64b5f6', '#2196f3', '#1976d2']):
-        self.TICK_SIZE = 12
-        self.AXIS_TITLE_SIZE = 14
-        fig = make_subplots(rows=2, cols=2, subplot_titles=[f"<b>{t}</b>" for t in ("C-Series", "N-Series", "O-Series", "F-Series")], vertical_spacing=0.08, horizontal_spacing=0.07)
-        atoms = ['C', 'N', 'O', 'F']
-        names = ["MP2(D T Q 5)+DifD", "D-T-Q-CCSD", "MP2(T Q 5)+DifD", "T-Q-CCSD", "MP2(D T Q 5)+DifD(T)", "D-T-Q-CCSD(T)", "MP2(T Q 5)+DifD(T)", "T-Q-CCSD(T)"]
-        # tEffect = [["MP2(T Q 5)+DifD", "T-Q-CCSD"], ["MP2(D T Q 5)+DifD", "D-T-Q-CCSD"], ["MP2(T Q 5)+DifD(T)", "T-Q-CCSD(T)"], ["MP2(D T Q 5)+DifD(T)", "D-T-Q-CCSD(T)"]]
-        labels = ["D & no (T)", "D & (T)", "no D & no (T)", "no D & (T)"]
-        # extrapscale = ['#0077b6', '#48cae4',] # '#E0AAFF', '#48cae4', '#9d4edd', '#4895ef', '#9d4edd', '#4895ef']
-        # extrapscale = #['#2196f3', '#1e88e5', '#1976d2', '#1565c0'] #['#bbdefb', '#90caf9', '#64b5f6', '#42a5f5',]
-        
-        for j, atom in enumerate(atoms):
-            self.extrapObj.fill_dictionaries(self.extrapObj.all, [atom,])
-            nameToErr = self.extrapObj.nameToErrors
-            yVals, yErrs = [], []
-            for names in dtEffect:
-                yVals.append(sum([float(nameToErr[name]['MAE']) for name in names])/len(names))
-                yErrs.append(sum([float(nameToErr[name]['STD(AE)']) for name in names])/len(names))
-            if j//2 == 0:
-                fig.add_trace(self.create_bar_trace(labels, yVals, 'general', yErrs, extrapscale, showlegend=False), row=1+j//2,col = 1+j%2)
-            else:
-                fig.add_trace(self.create_bar_trace(labels, yVals, 'general', yErrs, extrapscale, showlegend=False), row=1+j//2,col = 1+j%2)
-
-        fig.update_yaxes(range=[0, 0.69]) 
-        fig.update_layout(
-            margin=dict(l=10, r=20, t=30, b=0),
-            width=720, height=490
-        )
-        self._update_axes(fig, ytitle='MAE compared with<br>experimental CEBEs (eV)', ydtick=0.1)#ydtick=0.1
-        self._update_fig(fig)
-        fig['layout']['xaxis1'].update(showticklabels = False, tickvals=[])
-        fig['layout']['xaxis2'].update(showticklabels = False, tickvals=[])
-        fig['layout']['yaxis2'].update(title='')
-        fig['layout']['yaxis4'].update(title='')
-        if interact: fig.show()
-        else: self._save_fig(fig, 'bars_dtstudy'+suffix)
 
     def extrap_err_bars_series(self, interact=False, suffix=''):
         self.TICK_SIZE = 12
@@ -572,21 +395,6 @@ class Figures(Graph):
         fig.write_image(figure, format="pdf")
         time.sleep(2)
 
-        # self.method_error_bars_general(interact=False)
-        # self.method_error_bars_series(interact=False)
-
-        # for dEffect, suffix in (
-        #     ([["D-T-Q-CCSD",], ["T-Q-CCSD",]], '-cc'), 
-        #     ([["D-T-Q-CCSD(T)"], ["T-Q-CCSD(T)"]], '-cc-triples')):
-        #     self.extrap_err_bars_dstudy(dEffect, suffix=suffix)
-
-        # self.extrap_err_bars_tstudy(includeD=False, suffix='-noD')
-        # self.extrap_err_bars_tstudy(includeD=True, suffix='-withD')
-
-        # for dtEffect, suffix in (
-        #     ([["D-T-Q-CCSD"], ["D-T-Q-CCSD(T)"], ["T-Q-CCSD"], ["T-Q-CCSD(T)"]], '-ccsd'),):
-        #     self.extrap_err_bars_dtstudy(dtEffect, suffix=suffix)
-            # self.extrap_err_bars_dtstudy_general(dtEffect, suffix=suffix)
 
         # for atom, yrangeAbs, yrange in zip("C N O F".split(), [[0, 1.1], [0, 0.6], [0, 0.5], [0, 0.5]], [[-0.1, 1.1], [-0.4, 0.6], [-0.4, 0.5], [-0.4, 0.5]]):
             # self.effect_of_small_basis_difference([atom], lambda x: abs(x), yrangeAbs, interact=False, suffix=f'{atom}-series')
@@ -595,23 +403,10 @@ class Figures(Graph):
         # self.small_basis_subplots(lambda x: abs(x))
         # self.big_basis_subplots(lambda x: abs(x))
 
-        # extrapscale = ['#c77dff', '#9d4edd']
-        # for dEffect, suffix in (
-        #     ([["MP2(D T Q 5)+DifD",], ["MP2(T Q 5)+DifD",]], '-mp2'), 
-        #     ([["MP2(D T Q 5)+DifD(T)"], ["MP2(T Q 5)+DifD(T)"]], '-mp2-triples')):
-        #     self.extrap_err_bars_dstudy(dEffect, suffix=suffix, extrapscale=extrapscale)
-
-        # # self.extrap_err_bars_tstudy()
-        # extrapscale = ['#e0aaff', '#c77dff', '#9d4edd', '#7b2cbf']
-        # for dtEffect, suffix in (
-        #     ([["MP2(D T Q)+DifD"], ["MP2(D T Q)+DifD(T)"], ["MP2(T Q)+DifD"], ["MP2(T Q)+DifD(T)"]], '-mp2-no5'),
-        #     ([["MP2(D T Q 5)+DifD"], ["MP2(D T Q 5)+DifD(T)"], ["MP2(T Q 5)+DifD"], ["MP2(T Q 5)+DifD(T)"]], '-mp2-w5'),):
-        #     self.extrap_err_bars_dtstudy(dtEffect, suffix=suffix, extrapscale=extrapscale)
-
 
         # self.extrap_err_bars_with_bad(interact=False, suffix='-with5', do5=True)
         # self.extrap_err_bars_with_bad(interact=False, suffix='-no5', do5=False)
-        self.extrap_err_bars_for_toc(interact=False, suffix='-no5')
+        # self.extrap_err_bars_for_toc(interact=False, suffix='-no5')
 
         # # self.extrap_err_bars_general(interact=False)
         # self.extrap_err_bars_series(interact=False)

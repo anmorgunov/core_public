@@ -4,6 +4,7 @@ import Analysis
 from Analysis.Modules import Parser
 from Analysis.Modules import Extrapolation
 from Analysis import CreateTables
+from Analysis import CreateFigures
 
 import os
 import pprint
@@ -124,3 +125,44 @@ relevantMols = {
 }
 
 table4.main(relevantMols)
+
+# --------------- CREATE FIGURES ---------------
+# import time
+# import plotly.express as px
+# figure="test.pdf"
+# fig=px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
+# fig.write_image(figure, format="pdf")
+# time.sleep(2)
+
+figures_path = os.path.join(DATA_PATH, "paper-figures")
+CreateFigures.method_error_bars_general(pobj.algoToStats["mom"], figures_path)
+CreateFigures.method_error_bars_series(pobj.algoToAtomStats["mom"], figures_path)
+
+ccsdNames = "D-T-Q-CCSD D-T-Q-CCSD(T) T-Q-CCSD T-Q-CCSD(T)".split()
+ccsdColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
+
+CreateFigures.extrap_err_bars_dtstudy(
+    eobj.algoToAtomStats["mom"], ccsdNames, ccsdColors, figures_path
+)
+CreateFigures.extrap_err_bars_dtstudy_general(
+    eobj.algoToStats["mom"], ccsdNames, ccsdColors, figures_path
+)
+
+
+mp2Colors = ["#e0aaff", "#c77dff", "#9d4edd", "#7b2cbf"]
+mp2_no5 = "MP2[D T Q]+DifD | MP2[D T Q]+DifD(T) | MP2[T Q]+DifD | MP2[T Q]+DifD(T)".split(' | ')
+mp2_w5 = "MP2[D T Q 5]+DifD | MP2[D T Q 5]+DifD(T) | MP2[T Q 5]+DifD | MP2[T Q 5]+DifD(T)".split(' | ')
+CreateFigures.extrap_err_bars_dtstudy(
+    eobj.algoToAtomStats["mom"], mp2_no5, mp2Colors, figures_path, suffix="-mp2-no5"
+)
+CreateFigures.extrap_err_bars_dtstudy(
+    eobj.algoToAtomStats["mom"], mp2_w5, mp2Colors, figures_path, suffix="-mp2-w5"
+)
+
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
+eobj.calculate_errors(pobj.molToExper)
+eobj.calculate_series_statistics()
+eobj.calculate_overall_statistics()
+
+for include_pentuple in (True, False):
+    CreateFigures.extrap_err_bars_summary(eobj.algoToAtomStats["mom"], figures_path, include_pentuple)

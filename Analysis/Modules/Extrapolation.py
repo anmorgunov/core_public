@@ -181,6 +181,7 @@ class WholeDataset:
                         "MaxAE": np.max(abs_errs),
                         "STD(AE)": np.std(abs_errs),
                         "n": len(errors),
+                        "abs_errors": abs_errs,
                     }
         self.algoToAtomStats = algoToAtomStats
 
@@ -207,39 +208,9 @@ class WholeDataset:
                     "MaxAE": np.max(abs_errs),
                     "STD(AE)": np.std(abs_errs),
                     "n": len(errors),
+                    "abs_errors": abs_errs,
                 }
         self.algoToStats = algoToStats
-
-    # def export_errors(self, names, atoms):
-    #     """Exports errors as md table.
-
-    #     The names used define what data will be printed in the table.
-    #     """
-    #     atomstr = "".join(atoms)
-    #     self.fill_dictionaries(names, atoms)
-    #     headers = [
-    #         "Extrapolation Scheme",
-    #         "MSE",
-    #         "MAE",
-    #         "MedAE",
-    #         "MaxAE",
-    #         "STD",
-    #         "Sample Size",
-    #     ]
-    #     body = []
-    #     for name in names:
-    #         erD = self.nameToErrors[name]
-    #         row = [
-    #             name,
-    #             f"{erD['MSE']}",
-    #             f"{erD['MAE']}",
-    #             f"{erD['MedAE']}",
-    #             f"{erD['MaxAE']}",
-    #             f"{erD['STD(AE)']}",
-    #             f"{len(erD['raw'])}",
-    #         ]
-    #         body.append(row)
-    #     return headers, body
 
     def _create_extrapolation_schemes(self):
         # CCSD schemes

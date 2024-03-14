@@ -11,7 +11,6 @@ import os
 from openpyxl import load_workbook
 from . import constants
 
-BASE_PATH = os.path.dirname(__file__)
 
 
 class SingleZetaResults:
