@@ -127,12 +127,7 @@ relevantMols = {
 table4.main(relevantMols)
 
 # --------------- CREATE FIGURES ---------------
-# import time
-# import plotly.express as px
-# figure="test.pdf"
-# fig=px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
-# fig.write_image(figure, format="pdf")
-# time.sleep(2)
+CreateFigures._manual_delay()
 
 figures_path = os.path.join(DATA_PATH, "paper-figures")
 CreateFigures.method_error_bars_general(pobj.algoToStats["mom"], figures_path)

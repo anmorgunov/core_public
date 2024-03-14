@@ -21,6 +21,13 @@ for basis, methods in BASIS_TO_METHOD.items():
 METHOD_TO_LABEL = {"UHF": "ΔHF", "MP2": "ΔMP2", "CCSD": "ΔCCSD", "CCSD(T)": "ΔCCSD(T)"}
 METHOD_COLORS = ["#b2df8a", "#E0AAFF", "#48cae4", "#0077b6"]  # darker green 33a02c
 
+def _manual_delay():
+    import time
+    import plotly.express as px
+    figure="test.pdf"
+    fig=px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
+    fig.write_image(figure, format="pdf")
+    time.sleep(2)
 
 def create_bar_trace(xVals, yVals, label, errors, color, showlegend=True):
     return go.Bar(
