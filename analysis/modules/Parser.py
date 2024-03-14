@@ -10,7 +10,7 @@ ExperDataType = Dict[str, Number]
 BasisDataType = Dict[str, Union[str, Number]]
 MoleculeDataType = Dict[str, BasisDataType]
 AtomDataType = Dict[str, MoleculeDataType]
-MethodDataType = Dict[str, AtomDataType]
+AlgoDataType = Dict[str, AtomDataType]
 
 
 CALC_WB_COLS = {
@@ -59,7 +59,7 @@ class ParsedData:
         self,
         experimental_wb: str,
         calculations_folder: str,
-        methods: List[str],
+        algorithms: List[str],
         calculations_wb: str,
         do_average_experimental: bool = True,
     ):
@@ -76,8 +76,8 @@ class ParsedData:
         self.molToExper:ExperDataType = {}
         self.doAverageExperimental = do_average_experimental
 
-        self.methods = methods
-        self.methodToData = {}
+        self.algorithms = algorithms
+        self.algoToData = {}
 
         self.debug = False
 
@@ -86,7 +86,7 @@ class ParsedData:
 
     def _parse_calculations(self):
         """
-        Parse data from folders listed in self.methodToFolders and store it in a molToData dictionary
+        Parse data from folders listed in self.algorithmToFolders and store it in a molToData dictionary
 
         molToData maps molecule (str) to basis (D/T, also str) to a dictionary:
             \{
@@ -98,27 +98,27 @@ class ParsedData:
                 "CCSD": result of CCSD calculation
             \}
 
-        molToData is saved as a value of self.methodToData with relevant key
+        molToData is saved as a value of self.algoToData with relevant key
 
-        P.S. This is already implemented to work with different methods (mom, sgm, coreless). Just use a different key in methodToFolders
+        P.S. This is already implemented to work with different algorithms (mom, sgm, coreless). Just use a different key in algorithmToFolders
         """
-        for method in self.methods:
-            methodPath = os.path.join(self.calcPath, method)
+        for algorithm in self.algorithms:
+            algoPath = os.path.join(self.calcPath, algorithm)
             atoms = [
                 item
-                for item in os.listdir(methodPath)
-                if os.path.isdir(os.path.join(methodPath, item)) and item != ".DS_Store"
+                for item in os.listdir(algoPath)
+                if os.path.isdir(os.path.join(algoPath, item)) and item != ".DS_Store"
             ]
             if self.debug:
                 print(f"{atoms=}")
             for atom in atoms:
-                atomToData:AtomDataType = self.methodToData.setdefault(method, {}).setdefault(
+                atomToData:AtomDataType = self.algoToData.setdefault(algorithm, {}).setdefault(
                     atom, {}
                 )
 
                 if self.debug:
-                    print(f"{self.methodToData=}, {atomToData=}")
-                atomPath = os.path.join(methodPath, atom)
+                    print(f"{self.algoToData=}, {atomToData=}")
+                atomPath = os.path.join(algoPath, atom)
                 molecules = [
                     molecule
                     for molecule in os.listdir(atomPath)
@@ -145,7 +145,7 @@ class ParsedData:
                             print(f"{files=}")
 
                         # Case 1. Calculation was unsuccesful and did not terminate normally
-                        if f"CEBE_{method}.txt" not in files:
+                        if f"CEBE_{algorithm}.txt" not in files:
                             basisToData["error"] = "No CEBE file"
                             err = os.path.join(basPath, "sbatch.err")
                             errFile = open(err, "r").readlines()
@@ -155,7 +155,7 @@ class ParsedData:
                                 basisToData["detailed"] = "empty?"
                         # Case 2. Calculation terminated normally
                         else:
-                            result = os.path.join(basPath, f"CEBE_{method}.txt")
+                            result = os.path.join(basPath, f"CEBE_{algorithm}.txt")
                             lines = open(result, "r").readlines()
                             for rline in lines:
                                 line = rline.split("\n")[0]
@@ -201,7 +201,7 @@ class ParsedData:
         self.molToExper = data
 
     def _calculate_mp25(self):
-        for atomData in self.methodToData.values():
+        for atomData in self.algoToData.values():
             for molData in atomData.values():
                 for basData in molData.values():
                     for data in basData.values():
@@ -210,7 +210,7 @@ class ParsedData:
 
     def _update_calculation_wb(self):
         """
-        Write the contents of self.methodToData from parse_results to a CEBE_Data file, preserving any comments in column L (currently not used)
+        Write the contents of self.algoToData from parse_results to a CEBE_Data file, preserving any comments in column L (currently not used)
         """
         readWS = self.readWB["Sheet"]
         ws = self.saveWB["Sheet"]
@@ -222,12 +222,12 @@ class ParsedData:
         for col in self.cols.split(" "):
             ws[col + str(r)].font = self.font
         r += 1
-        for method, atomData in self.methodToData.items():
+        for algorithm, atomData in self.algoToData.items():
             for atom, molData in atomData.items():
                 for molecule, basToData in molData.items():
                     for basis, data in basToData.items():
                         ws["B" + str(r)] = molecule
-                        ws["C" + str(r)] = method
+                        ws["C" + str(r)] = algorithm
                         ws["D" + str(r)] = basis
                         ws["E" + str(r)] = atom
                         if molecule in self.molToExper:
@@ -300,24 +300,24 @@ class ParsedData:
             row += 1
         new_wb.save(save_path)
 
-    def filter_data_by_molecules(self, methodToData:MethodDataType, atomToMols:Dict[str, Set[str]]) -> MethodDataType:
-        filtered_methodToData = {}
-        for method, atomData in methodToData.items():
+    def filter_data_by_molecules(self, algoToData:AlgoDataType, atomToMols:Dict[str, Set[str]]) -> AlgoDataType:
+        filtered_algoToData = {}
+        for algorithm, atomData in algoToData.items():
             for atom, molData in atomData.items():
                 for molecule, basData in molData.items():
                     if molecule in atomToMols[atom]:
-                        filtered_methodToData.setdefault(method, {}).setdefault(atom, {})[molecule] = basData
-                        filtered_methodToData[method][atom][molecule] = basData
-        return filtered_methodToData
+                        filtered_algoToData.setdefault(algorithm, {}).setdefault(atom, {})[molecule] = basData
+                        filtered_algoToData[algorithm][atom][molecule] = basData
+        return filtered_algoToData
 
-    def filter_by_presence_of_experimental(self, methodToData:MethodDataType) -> MethodDataType:
-        filtered_methodToData = {}
-        for method, atomData in methodToData.items():
+    def filter_by_presence_of_experimental(self, algoToData:AlgoDataType) -> AlgoDataType:
+        filtered_algoToData = {}
+        for algorithm, atomData in algoToData.items():
             for atom, molData in atomData.items():
                 for molecule, basData in molData.items():
                     if molecule in self.molToExper:
-                        filtered_methodToData.setdefault(method, {}).setdefault(atom, {})[molecule] = basData
-        return filtered_methodToData
+                        filtered_algoToData.setdefault(algorithm, {}).setdefault(atom, {})[molecule] = basData
+        return filtered_algoToData
 
     def main(self, save: bool = True):
         self._parse_experimental()

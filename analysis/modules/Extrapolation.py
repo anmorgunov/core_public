@@ -1,7 +1,7 @@
 import plotly.graph_objects as go
 import scipy.optimize
 import numpy as np
-from .Parser import MethodDataType, BasisDataType, ExperDataType
+from .Parser import AlgoDataType, BasisDataType, ExperDataType
 from typing import List, Tuple, Union, Dict, Optional
 
 Number = Union[float, int]
@@ -113,12 +113,12 @@ class WholeDataset:
         """
         Initialization
         """
-        self.methodToCBS = {}
+        self.algoToCBS = {}
         self.smallBasisException = {}
         self.debug = False
 
-    def extrapolate_all_data(self, methodData: MethodDataType, schemes: List[str]):
-        for method, atomData in methodData.items():
+    def extrapolate_all_data(self, algoData: AlgoDataType, schemes: List[str]):
+        for algorithm, atomData in algoData.items():
             for atom, molData in atomData.items():
                 for mol, basisData in molData.items():
                     for scheme in schemes:
@@ -126,49 +126,49 @@ class WholeDataset:
                             basisData, scheme
                         )
                         if result is None:
-                            self.smallBasisException.setdefault(method, {}).setdefault(
+                            self.smallBasisException.setdefault(algorithm, {}).setdefault(
                                 atom, {}
                             )[mol] = scheme
                         else:
-                            self.methodToCBS.setdefault(method, {}).setdefault(
+                            self.algoToCBS.setdefault(algorithm, {}).setdefault(
                                 atom, {}
                             ).setdefault(mol, {})[scheme] = result
 
     def calculate_errors(self, experimentalData: ExperDataType):
-        methodToError = {}
-        for method, atomData in self.methodToCBS.items():
+        algoToError = {}
+        for algorithm, atomData in self.algoToCBS.items():
             for atom, molData in atomData.items():
                 for mol, schemeData in molData.items():
                     for scheme, data in schemeData.items():
                         if data["cbs+corr"] is not None:
                             error = data["cbs+corr"] - experimentalData[mol]
-                            methodToError.setdefault(method, {}).setdefault(
+                            algoToError.setdefault(algorithm, {}).setdefault(
                                 atom, {}
                             ).setdefault(mol, {})[scheme] = error
                         else:
                             error = data["cbs"] - experimentalData[mol]
-                            methodToError.setdefault(method, {}).setdefault(
+                            algoToError.setdefault(algorithm, {}).setdefault(
                                 atom, {}
                             ).setdefault(mol, {})[scheme] = error
-        self.methodToError = methodToError
+        self.algoToError = algoToError
 
     def calculate_series_statistics(self):
-        assert hasattr(self, "methodToError"), "You need to call calculate_errors first"
-        methodToAtomErrors = {}
-        for method, atomData in self.methodToError.items():
+        assert hasattr(self, "algoToError"), "You need to call calculate_errors first"
+        algoToAtomErrors = {}
+        for algorithm, atomData in self.algoToError.items():
             for atom, molData in atomData.items():
                 for schemeData in molData.values():
                     for scheme, error in schemeData.items():
-                        methodToAtomErrors.setdefault(method, {}).setdefault(
+                        algoToAtomErrors.setdefault(algorithm, {}).setdefault(
                             atom, {}
                         ).setdefault(scheme, []).append(error)
-        methodToAtomStats = {}
-        for method, atomData in methodToAtomErrors.items():
+        algoToAtomStats = {}
+        for algorithm, atomData in algoToAtomErrors.items():
             for atom, schemeData in atomData.items():
                 for scheme, errors_list in schemeData.items():
                     errors = np.array(errors_list)
                     abs_errs = np.abs(errors)
-                    methodToAtomStats.setdefault(method, {}).setdefault(atom, {})[
+                    algoToAtomStats.setdefault(algorithm, {}).setdefault(atom, {})[
                         scheme
                     ] = {
                         "MSE": np.mean(errors),
@@ -178,24 +178,24 @@ class WholeDataset:
                         "STD(AE)": np.std(abs_errs),
                         "n": len(errors),
                     }
-        self.methodToAtomStats = methodToAtomStats
+        self.algoToAtomStats = algoToAtomStats
 
     def calculate_overall_statistics(self):
-        assert hasattr(self, "methodToError"), "You need to call calculate_errors first"
-        methodToErrors = {}
-        for method, atomData in self.methodToError.items():
+        assert hasattr(self, "algoToError"), "You need to call calculate_errors first"
+        algoToErrors = {}
+        for algorithm, atomData in self.algoToError.items():
             for molData in atomData.values():
                 for schemeData in molData.values():
                     for scheme, error in schemeData.items():
-                        methodToErrors.setdefault(method, {}).setdefault(
+                        algoToErrors.setdefault(algorithm, {}).setdefault(
                             scheme, []
                         ).append(error)
-        methodToStats = {}
-        for method, schemeData in methodToErrors.items():
+        algoToStats = {}
+        for algorithm, schemeData in algoToErrors.items():
             for scheme, errors in schemeData.items():
                 errors = np.array(errors)
                 abs_errs = np.abs(errors)
-                methodToStats.setdefault(method, {})[scheme] = {
+                algoToStats.setdefault(algorithm, {})[scheme] = {
                     "MSE": np.mean(errors),
                     "MAE": np.mean(abs_errs),
                     "MedAE": np.median(abs_errs),
@@ -203,7 +203,7 @@ class WholeDataset:
                     "STD(AE)": np.std(abs_errs),
                     "n": len(errors),
                 }
-        self.methodToStats = methodToStats
+        self.algoToStats = algoToStats
 
     # def export_errors(self, names, atoms):
     #     """Exports errors as md table.

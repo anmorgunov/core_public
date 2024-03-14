@@ -20,11 +20,11 @@ DATA_PATH = os.path.join(BASE_PATH, "Data")
 experimental_wb = os.path.join(DATA_PATH, "experimental.xlsx")
 calculations_folder = os.path.join(DATA_PATH, "calculations")
 calculations_wb = os.path.join(DATA_PATH, "CEBE_Data.xlsx")
-methods = ["mom"]
-pobj = Parser.ParsedData(experimental_wb, calculations_folder, methods, calculations_wb)
+algorithms = ["mom"]
+pobj = Parser.ParsedData(experimental_wb, calculations_folder, algorithms, calculations_wb)
 # pobj.debug = True
 pobj.main(save=False)
-# pp.pprint(pobj.methodToData['mom']['o']['h2o']['D'])
+# pp.pprint(pobj.algoToData['mom']['o']['h2o']['D'])
 
 
 # the calculations_wb file can become huge quite quickly, so if you want to check on results
@@ -43,13 +43,13 @@ eobj = Extrapolation.WholeDataset()
 # eobj.parse_scheme('MP2[D T Q]+DifD')
 # eobj.parse_scheme('MP2[D T Q 5]+DifD(T)')
 
-# r1 = eobj.extrapolate_molecule_given_scheme(pobj.methodToData['mom']['o']['h2o'], 'T-Q-CCSD')
+# r1 = eobj.extrapolate_molecule_given_scheme(pobj.algoToData['mom']['o']['h2o'], 'T-Q-CCSD')
 
-# r2 = eobj.extrapolate_molecule_given_scheme(pobj.methodToData['mom']['o']['h2o'], 'T-Q-CCSD(T)')
+# r2 = eobj.extrapolate_molecule_given_scheme(pobj.algoToData['mom']['o']['h2o'], 'T-Q-CCSD(T)')
 
-# r3 = eobj.extrapolate_molecule_given_scheme(pobj.methodToData['mom']['o']['h2o'], 'MP2[T Q 5]')
+# r3 = eobj.extrapolate_molecule_given_scheme(pobj.algoToData['mom']['o']['h2o'], 'MP2[T Q 5]')
 
-# r4 = eobj.extrapolate_molecule_given_scheme(pobj.methodToData['mom']['o']['h2o'], 'MP2[T Q 5]+DifD')
+# r4 = eobj.extrapolate_molecule_given_scheme(pobj.algoToData['mom']['o']['h2o'], 'MP2[T Q 5]+DifD')
 
 # print(f"{r1=}\n{r2=}\n{r3=}\n{r4=}")
 
@@ -58,7 +58,7 @@ atomToMols = {
     atom.lower(): set(molStr.split()) for atom, molStr in constants.ATOM_TO_MOLS.items()
 }
 
-filteredData = pobj.filter_data_by_molecules(pobj.methodToData, atomToMols)
+filteredData = pobj.filter_data_by_molecules(pobj.algoToData, atomToMols)
 filteredData = pobj.filter_by_presence_of_experimental(filteredData)
 # pp.pprint(atomToMols)
 
@@ -73,7 +73,7 @@ eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes['CCSD'])
 eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes['MP2'])
 # pp.pprint(pobj.molToExper)
 eobj.calculate_errors(pobj.molToExper)
-# print(eobj.methodToError['mom']['o']['h2o'])
+# print(eobj.algorithmToError['mom']['o']['h2o'])
 eobj.calculate_series_statistics()
 # print(eobj.methodToAtomStats['mom']['o']['T-Q-CCSD'])
 eobj.calculate_overall_statistics()
@@ -88,3 +88,5 @@ eobj.calculate_overall_statistics()
 
 table1 = CreateTables.SingleZetaResults(filteredData['mom'], pobj.molToExper)
 table1.all_results(save_folder=os.path.join(DATA_PATH, "paper-tables", "singlezeta"))
+
+# table2 = CreateTables.MethodSummary()

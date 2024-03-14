@@ -1,5 +1,5 @@
 from .Modules import LaTeX, Extrapolation, Parser
-from .Modules.Parser import MethodDataType, ExperDataType, AtomDataType
+from .Modules.Parser import AlgoDataType, ExperDataType, AtomDataType
 from typing import Dict, Set
 import os
 from . import constants
@@ -90,3 +90,9 @@ class SingleZetaResults:
             for basis in "D T Q 5".split():
                 path = os.path.join(save_folder, f"{atom}-{basis}Z")
                 self.series_table(atom.lower(), basis, path)
+
+
+class MethodSummary:
+
+    def __init__(self):
+        pass
