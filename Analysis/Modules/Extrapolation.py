@@ -2,10 +2,13 @@ import plotly.graph_objects as go
 import scipy.optimize
 import numpy as np
 from .Parser import AlgoDataType, BasisDataType, ExperDataType
-from typing import List, Tuple, Union, Dict, Optional
+from typing import List, Tuple, Union, Dict, Optional, Iterable
 
 Number = Union[float, int]
-
+SchemeStatsType = Dict[str, Dict[str, Number]]
+AlgoStatsType = Dict[str, SchemeStatsType]
+AtomSchemeStatsType = Dict[str, Dict[str, SchemeStatsType]]
+AlgoAtomStatsType = Dict[str, AtomSchemeStatsType]
 
 def rounder(dig):
     def rounder_to_dig(float):
@@ -162,7 +165,8 @@ class WholeDataset:
                         algoToAtomErrors.setdefault(algorithm, {}).setdefault(
                             atom, {}
                         ).setdefault(scheme, []).append(error)
-        algoToAtomStats = {}
+
+        algoToAtomStats:AlgoAtomStatsType = {}
         for algorithm, atomData in algoToAtomErrors.items():
             for atom, schemeData in atomData.items():
                 for scheme, errors_list in schemeData.items():
@@ -190,7 +194,8 @@ class WholeDataset:
                         algoToErrors.setdefault(algorithm, {}).setdefault(
                             scheme, []
                         ).append(error)
-        algoToStats = {}
+        
+        algoToStats:AlgoStatsType = {}
         for algorithm, schemeData in algoToErrors.items():
             for scheme, errors in schemeData.items():
                 errors = np.array(errors)
@@ -239,8 +244,8 @@ class WholeDataset:
     def _create_extrapolation_schemes(self):
         # CCSD schemes
         ccsd_schemes = []
-        for method in "CCSD CCSD(T)".split():
-            for bases in "D-T T-Q D-T-Q".split():
+        for bases in "D-T T-Q D-T-Q".split():
+            for method in "CCSD CCSD(T)".split():
                 ccsd_schemes.append(f"{bases}-{method}")
         if self.debug:
             print(f"{ccsd_schemes=}")
@@ -252,26 +257,44 @@ class WholeDataset:
             print(f"{hf_schemes=}")
 
         mp2_schemes = []
+        mp2_schemes_ext = []
         mp2_bases = "D | T | Q | 5 | D T | D T Q | T Q | Q 5 | T Q 5 | D T Q 5"
         for bases in mp2_bases.split(" | "):
             if len(bases) != 1:
                 mp2_schemes.append(f"MP2[{bases}]")
+            if bases != "D":
+                mp2_schemes.append(f"MP2[{bases}]+DifD")
+                mp2_schemes.append(f"MP2[{bases}]+DifD(T)")
             for (
                 small_basis
-            ) in "STO-3G STO-6G 3-21G 4-31G 6-31G def2svp def2svpd D".split():
-                if bases == "D" and small_basis == "D":
-                    continue
-                mp2_schemes.append(f"MP2[{bases}]+Dif{small_basis}")
-                mp2_schemes.append(f"MP2[{bases}]+Dif{small_basis}(T)")
+            ) in "STO-3G STO-6G 3-21G 4-31G 6-31G def2svp def2svpd".split():
+                mp2_schemes_ext.append(f"MP2[{bases}]+Dif{small_basis}")
+                mp2_schemes_ext.append(f"MP2[{bases}]+Dif{small_basis}(T)")
 
         if self.debug:
             print(f"{mp2_schemes=}")
 
-        self.schemes = {
-            "CCSD": ccsd_schemes,
+        self.schemeDict = {
             "HF": hf_schemes,
+            "CCSD": ccsd_schemes,
             "MP2": mp2_schemes,
+            "MP2_EXT": mp2_schemes_ext,
         }
+
+        self._schemeIterKeys = ["HF", "CCSD", "MP2", "MP2_EXT"]
+
+    
+    def scheme_generator(self)->Iterable[str]:
+        assert hasattr(self, "schemeDict"), "You need to call _create_extrapolation_schemes first"
+        for key in self._schemeIterKeys:
+            schemes = self.schemeDict[key]
+            for scheme in schemes:
+                yield scheme
+    
+    @property
+    def schemes(self):
+        print('call schemes')
+        return self.scheme_generator()
 
 
 if __name__ == "__main__":

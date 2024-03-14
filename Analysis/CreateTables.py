@@ -5,7 +5,8 @@ from .Modules.Parser import (
     BasisStatsType,
     AtomBasisStatsType,
 )
-from typing import Dict, Set, List
+from .Modules.Extrapolation import SchemeStatsType, AtomSchemeStatsType
+from typing import Dict, Set, List, Iterable, Callable
 import os
 from . import constants
 
@@ -118,52 +119,167 @@ class MethodSummary:
         self.show_sample_size = show_sample_size
         self.isPublication = isPublication
 
-    def collect_series(self, atom: str, bases: List[str]):
+    def create_table_body(self, statsContainer: BasisStatsType, bases: List[str]):
         _me = lambda x: f"$\Delta${x}" if x != "UHF" else f"$\Delta$HF"
         body = []
+        nSet = set()
         f = self.f  # f stands for formatter
         for basis in bases:
             if self.isPublication:
                 methods = self.basisToMethods[basis]
             else:
-                methods = self.atomToBasisStats[atom][basis]
+                methods = statsContainer[basis]
             for method in methods:
-                stats = self.atomToBasisStats[atom][basis][method]
-                row = [
-                    basis,
-                    _me(method),
-                    f(stats["MSE"]),
-                    f(stats["MAE"]),
-                    f(stats["MedAE"]),
-                    f(stats["MaxAE"]),
-                    f(stats["STD(AE)"]),
-                ]
+                stats = statsContainer[basis][method]
+                row = [basis, _me(method)]
+                for key in "MSE MAE MedAE MaxAE STD(AE)".split():
+                    row.append(f(stats[key]))
                 if self.show_sample_size:
                     row.append(stats["n"])
+                nSet.add(stats["n"])
                 body.append(row)
-        return body
+        return body, nSet
 
     def series_table(self, atom: str, bases: List[str], save_path: str):
-        body = self.collect_series(atom, bases)
+        body, nSet = self.create_table_body(self.atomToBasisStats[atom], bases)
 
         if self.show_sample_size:
             self.col_names.append("Sample Size")
+            suffix = ""
+        else:
+            assert len(nSet) == 1, "Sample size must be the same for all methods"
+            suffix = f" ({nSet.pop()} molecules)"
         header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
-        caption = f"Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom}-series"
+        caption = (
+            f"Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom.upper()}-series"
+            + suffix
+        )
         LaTeX.Table.export_table(
             caption=caption,
-            label=f"summary-{atom.lower()}",
+            label=f"method-summary-{atom.lower()}",
             positioning="l " * len(header),
             headers=header,
             body=body,
             name=save_path,
         )
 
-    def all_results(
-        self,
-    ):
+    def all_table(self, bases: List[str], save_path: str):
+        body, nSet = self.create_table_body(self.basisToStats, bases)
+
+        if self.show_sample_size:
+            self.col_names.append("Sample Size")
+            suffix = ""
+        else:
+            assert len(nSet) == 1, "Sample size must be the same for all methods"
+            suffix = f" ({nSet.pop()} molecules)"
+        header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
+        caption = (
+            f"Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points"
+            + suffix
+        )
+        LaTeX.Table.export_table(
+            caption=caption,
+            label=f"method-all-summary",
+            positioning="l " * len(header),
+            headers=header,
+            body=body,
+            name=save_path,
+        )
+
+    def all_results(self):
         atoms = "C N O F".split()
         bases = "D T Q 5".split()
         for atom in atoms:
             path = os.path.join(self.save_folder, f"{atom}-summary")
             self.series_table(atom.lower(), bases, path)
+
+        self.all_table(bases, os.path.join(self.save_folder, "all-summary"))
+
+
+class ExtrapSchemeSummary:
+    col_names = ["Basis", "Method", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
+
+    def __init__(
+        self,
+        schemeToStats: SchemeStatsType,
+        atomToSchemeStats: AtomSchemeStatsType,
+        save_folder: str,
+        show_sample_size: bool = True,
+        isPublication: bool = False,
+    ):
+        self.schemeToStats = schemeToStats
+        self.atomToSchemeStats = atomToSchemeStats
+        self.f = lambda i: f"{i:.2f}"
+        self.save_folder = save_folder
+        self.show_sample_size = show_sample_size
+        self.isPublication = isPublication
+
+    def create_table_body(
+        self, statsContainer: SchemeStatsType, schemes: Iterable[str]
+    ):
+        body = []
+        nSet = set()
+        f = self.f  # f stands for formatter
+        for scheme in schemes:
+            stats = statsContainer[scheme]
+            row = [scheme]
+            for key in "MSE MAE MedAE MaxAE STD(AE)".split():
+                row.append(f(stats[key]))
+            if self.show_sample_size:
+                row.append(stats["n"])
+            nSet.add(stats["n"])
+            body.append(row)
+        return body, nSet
+
+    def series_table(self, atom: str, schemes: Iterable[str], save_path: str):
+        body, nSet = self.create_table_body(self.atomToSchemeStats[atom], schemes)
+
+        if self.show_sample_size:
+            self.col_names.append("Sample Size")
+            suffix = ""
+        else:
+            assert len(nSet) == 1, "Sample size must be the same for all methods"
+            suffix = f" ({nSet.pop()} molecules)"
+        header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
+        caption = (
+            f"Statistical analysis of accuracy of different extrapolation schemes at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom.upper()}-series"
+            + suffix
+        )
+        LaTeX.Table.export_table(
+            caption=caption,
+            label=f"extrap-scheme-summary-{atom.lower()}",
+            positioning="l " * len(header),
+            headers=header,
+            body=body,
+            name=save_path,
+        )
+
+    def all_table(self, schemes: Iterable[str], save_path: str):
+        body, nSet = self.create_table_body(self.schemeToStats, schemes)
+
+        if self.show_sample_size:
+            self.col_names.append("Sample Size")
+            suffix = ""
+        else:
+            assert len(nSet) == 1, "Sample size must be the same for all methods"
+            suffix = f" ({nSet.pop()} molecules)"
+        header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
+        caption = (
+            f"Statistical analysis of accuracy of different extrapolation schemes at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points"
+            + suffix
+        )
+        LaTeX.Table.export_table(
+            caption=caption,
+            label=f"extrap-all-summary",
+            positioning="l " * len(header),
+            headers=header,
+            body=body,
+            name=save_path,
+        )
+
+    def results_for_schemes(self, scheme_factory: Callable):
+        atoms = "C N O F".split()
+        for atom in atoms:
+            path = os.path.join(self.save_folder, f"{atom}-summary")
+            self.series_table(atom.lower(), scheme_factory(), path)
+        self.all_table(scheme_factory(), os.path.join(self.save_folder, "all-summary"))

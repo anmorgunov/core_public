@@ -72,18 +72,18 @@ filteredData = pobj.filter_by_presence_of_experimental(filteredData)
 eobj._create_extrapolation_schemes()
 eobj.debug = False
 # eobj.parse_scheme(scheme='MP2[T Q 5]+DifSTO-3G(T)')
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes["HF"])
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes["CCSD"])
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemes["MP2"])
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["HF"])
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["CCSD"])
+eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["MP2"])
 # pp.pprint(pobj.molToExper)
 eobj.calculate_errors(pobj.molToExper)
 # print(eobj.algorithmToError['mom']['o']['h2o'])
 eobj.calculate_series_statistics()
-# print(eobj.methodToAtomStats['mom']['o']['T-Q-CCSD'])
+# print(eobj.algoToAtomStats['mom']['o']['T-Q-CCSD'])
 eobj.calculate_overall_statistics()
-# print(eobj.methodToStats['mom']['T-Q-CCSD'])
-# print(eobj.methodToStats['mom']['MP2[D T Q 5]'])
-# print(eobj.methodToStats['mom']['MP2[D T Q 5]+DifD(T)'])
+# print(eobj.algoToStats['mom']['T-Q-CCSD'])
+# print(eobj.algoToStats['mom']['MP2[D T Q 5]'])
+# print(eobj.algoToStats['mom']['MP2[D T Q 5]+DifD(T)'])
 # print(eobj.smallBasisException)
 
 pobj.calculate_errors(filteredData)
@@ -98,7 +98,17 @@ table1.all_results(save_folder=os.path.join(DATA_PATH, "paper-tables", "single-z
 table2 = CreateTables.MethodSummary(
     pobj.algoToStats["mom"], pobj.algoToAtomStats["mom"],
     save_folder=os.path.join(DATA_PATH, "paper-tables", "method-summaries"),
-    show_sample_size=True,
+    show_sample_size=False,
     isPublication=True,
 )
 table2.all_results()
+
+table3 = CreateTables.ExtrapSchemeSummary(
+    eobj.algoToStats['mom'], eobj.algoToAtomStats['mom'],
+    save_folder=os.path.join(DATA_PATH, "paper-tables", "extrap-summaries"),
+    show_sample_size=False,
+    isPublication=True,
+)
+# print(eobj.algoToAtomStats['mom']['o'])
+eobj._schemeIterKeys = ['HF', 'CCSD', 'MP2']
+table3.results_for_schemes(scheme_factory=eobj.scheme_generator)
