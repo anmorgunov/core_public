@@ -3,6 +3,7 @@ import Analysis
 
 from Analysis.Modules import Parser
 from Analysis.Modules import Extrapolation
+from Analysis import CreateTables
 
 import os
 import pprint
@@ -13,11 +14,12 @@ def print(args):
 
 
 BASE_PATH = os.path.dirname(__file__)
+DATA_PATH = os.path.join(BASE_PATH, "Data")
 
 # --------------- PERFORM PARSING ---------------
-experimental_wb = os.path.join(BASE_PATH, "Data", "experimental.xlsx")
-calculations_folder = os.path.join(BASE_PATH, "Data", "calculations")
-calculations_wb = os.path.join(BASE_PATH, "Data", "CEBE_Data.xlsx")
+experimental_wb = os.path.join(DATA_PATH, "experimental.xlsx")
+calculations_folder = os.path.join(DATA_PATH, "calculations")
+calculations_wb = os.path.join(DATA_PATH, "CEBE_Data.xlsx")
 methods = ["mom"]
 pobj = Parser.ParsedData(experimental_wb, calculations_folder, methods, calculations_wb)
 # pobj.debug = True
@@ -80,3 +82,9 @@ eobj.calculate_overall_statistics()
 # print(eobj.methodToStats['mom']['MP2[D T Q 5]+DifD(T)'])
 # print(eobj.smallBasisException)
 
+
+
+# --------------- CREATE TABLES ---------------
+
+table1 = CreateTables.SingleZetaResults(filteredData['mom'], pobj.molToExper)
+table1.all_results(save_folder=os.path.join(DATA_PATH, "paper-tables", "singlezeta"))
