@@ -1,7 +1,28 @@
 import load_params
 import os 
 import configs
-import json 
+import json
+from typing import Dict
+
+import re
+def get_zeta(basis_set_name:str)->int:
+    zeta_dict:Dict[str,int] = {
+        'DZ': 2,
+        'TZ': 3,
+        'QZ': 4,
+        '5Z': 5
+    }
+    match = re.search(r'pcX-(\d+)|cc-p?V?(DZ|TZ|QZ|5Z)', basis_set_name)
+    if match:
+        # Check which group got a match
+        if match.group(1):
+            # This is from 'pcX-n'
+            return int(match.group(1))
+        elif match.group(2):
+            # This is from 'cc-pVXX'
+            return zeta_dict[match.group(2)]
+    raise ValueError(f"Could not determine zeta value for basis set {basis_set_name}")
+
 
 class SubmitGenerator:
     """This is an object with which I create submission scripts
@@ -49,6 +70,16 @@ class SubmitGenerator:
         markStr = '(' + str(json.dumps(markList))[1:-1].replace(',', '') + ')'
         return regStr, coreStr, markStr
 
+    def process_base_pairs(self, basespairs:str):
+        regBases, coreBases, markList = [], [], []
+        for basis_pair in basespairs.replace(', ', ',').split():
+            reg, core = basis_pair.replace('(', '').replace(')', '').split(',')
+            regBases.append(reg)
+            coreBases.append(core)
+            markList.append(core)
+        return regBases, coreBases, markList
+            
+
     def create_scripts(self, params):
         """Creates a bash script with specified parameters
 
@@ -60,10 +91,13 @@ class SubmitGenerator:
         molsLoc = params.get('mols(loc)', None)
         memory = params.get('memory', configs.parameters.GENERAL_RAM_MEMORY) # if you don't specify memory, it'll be set to default value specified in configs.parameters
         time = params.get('time', configs.parameters.GENERAL_TIME_LIMIT)
-        bases = params.get('bases', configs.parameters.GENERAL_BASES)
+        if "basespairs" in params:
+            regBases, coreBases, markList = self.process_base_pairs(params['basespairs']) 
+        else:
+            bases = params.get('bases', configs.parameters.GENERAL_BASES)
+            regBases, coreBases, markList = self.process_bases(bases) 
         cores = params.get('cores', configs.parameters.GENERAL_CORES)
         partition = params.get('partition', '')
-        regBases, coreBases, markList = self.process_bases(bases) 
         memToCluster = configs.parameters.MEMORY_TO_CLUSTER
         memToCores = configs.parameters.MEMORY_TO_CORES
         extraParams = ''

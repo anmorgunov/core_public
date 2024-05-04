@@ -1,13 +1,59 @@
 import numpy as np
 import sys
-import nwchem # see basis_sets module to understand where it comes from
+from BasisSets import pyfiles as nwchem # see basis_sets module to understand where it comes from
 import configs
 from pyscf import gto, lo
 from dmp2 import sgscf
 from pyscf.tools import cubegen
 from datetime import datetime
+from pathlib import Path
+import pprint
+from typing import Dict
+pp = pprint.PrettyPrinter(indent=4)
+
+basisDictType = Dict[str, str]
+
+def separate_txt_by_element(path:str)->Dict[str, str]:
+    with open(path, 'r') as file:
+        lines = file.readlines()
+
+    basis_sets:Dict[str, str] = {}
+    withinBasis = False
+    curElement = None
+    for i, rline in enumerate(lines):
+        line = rline.strip()
+        if line.startswith("#BASIS SET"):
+            withinBasis = True
+            curElement = lines[i+1].strip().split()[0]
+            continue
+        if line.startswith("END"):
+            break
+        if not withinBasis:
+            continue
+        if curElement not in basis_sets:
+            assert isinstance(curElement, str), "Element not instantiated"
+            basis_sets[curElement] = ""
+        basis_sets[curElement] += rline
+    return basis_sets
 
 
+def find_basis_files() -> Dict[str, basisDictType]:
+    basis = Path(__file__).resolve().parent / "BasisSets"
+    # find all files that end with .txt
+    basis_files = list(basis.glob("*.txt"))
+    keyToBasis:Dict[str, basisDictType] = {}
+    for file in basis_files:
+        fname = file.stem
+        atomToBasis = separate_txt_by_element(file)
+        atomToBasis['H'] = "cc-pV"
+        keyToBasis[fname] = atomToBasis
+    return keyToBasis
+
+
+def zeta_to_h_basis(zeta:int)->str:
+    return f"cc-pV{zeta}Z"
+
+# find_basis_files()
 class CEBECalculator:
 
     def __init__(self, PARAMS):
@@ -26,13 +72,16 @@ class CEBECalculator:
         self.ATOMS_TO_LOCALIZE = PARAMS.get('atoms_to_localize', self.HEAVYATOM).split()
 
         self.externalBasisLibrary = {
-            'cc-pVTZ': nwchem.deconccPVTZ.BASIS_SET,
-            '4-31G': nwchem.g431.BASIS_SET,
+            # 'cc-pVTZ': nwchem.deconccPVTZ.BASIS_SET,
+            # '4-31G': nwchem.g431.BASIS_SET,
             '6-311+G(3df)': nwchem.g6311plus3df.BASIS_SET,
-        }
+        } | find_basis_files()
+
         self.keyToConfig = {
             "cc-pVQZ": configs.setups.Q_CONFIG,
+            "pc-3": configs.setups.Q_CONFIG,
             "cc-pV5Z": configs.setups.PENTUPLE_CONFIG,
+            "pc-4": configs.setups.PENTUPLE_CONFIG,
             "test": configs.setups.TEST_CONFIG,
             "mp3": configs.setups.MP3_CONFIG,
             "local": configs.setups.LOCAL_CONFIG,
@@ -56,7 +105,7 @@ class CEBECalculator:
         self.doSFX = self.config.get('doSFX', self.GEN_CONFIG['doSFX'])
         self.toFreeze = self.config.get('toFreeze', self.GEN_CONFIG['toFreeze'])
         self.doChengBasis = self.config.get('doChengBasis', self.GEN_CONFIG['doChengBasis'])
-        self.doSpecialBasis = self.config.get('doSpecialBasis', self.GEN_CONFIG['doSpecialBasis'])
+        self.doSpecialBasis = PARAMS.get('doSpecialBasis', self.GEN_CONFIG['doSpecialBasis'])
         self.basisLibKey = self.config.get('basisLibKey', self.GEN_CONFIG['basisLibKey'])
         self.toPrintDensity = self.config.get('toPrintDensity', self.GEN_CONFIG['toPrintDensity'])
 
@@ -88,7 +137,6 @@ class CEBECalculator:
         core_basis = self.CORE_BASIS
         full_basis = self.FULL_BASIS
         doChengBasis = self.doChengBasis
-        doSpecialBasis = self.doSpecialBasis
         basisLibKey = self.basisLibKey
 
         if doChengBasis:
@@ -101,10 +149,11 @@ class CEBECalculator:
             for a in atom_symbols:
                 if a != heavy_atom:
                     basis_dict[a] = gto.basis.parse(basisDic[a]['reg'])
-        elif doSpecialBasis:
-            basisDic = self.externalBasisLibrary[basisLibKey] 
+        elif self.doSpecialBasis:
+            basisDic = self.externalBasisLibrary[core_basis] 
             for a in atom_symbols:
-                basis_dict[a] = gto.basis.parse(basisDic[a]['reg'])
+                basis_dict[a] = full_basis
+            basis_dict[heavy_atom] = gto.basis.parse(basisDic[heavy_atom])
         else:
             basis_dict[heavy_atom] = core_basis
             for a in atom_symbols:
@@ -127,7 +176,7 @@ class CEBECalculator:
         print("\t      Freeze orbitals?:\t", self.toFreeze)
         print("\t      Use Cheng orbitals?:\t", self.doChengBasis)
         print("\t      Do Special Basis?:\t", self.doSpecialBasis)
-        if self.doSpecialBasis: print("\t      Do Special Basis?:\t", self.basisLibKey)
+        if self.doSpecialBasis: print("\t      Do Special Basis?:\t", self.CORE_BASIS)
         print("\t*********************************************** ")
         print("\t*********************************************** ")
 
@@ -336,7 +385,7 @@ if __name__ == "__main__":
     parameters = sys.argv
     assert parameters[0].endswith('.py'), 'The first parameter should be path to the .py launch file'
     paramDic = {}
-    case_sensitive = {'corebasis', 'regularbasis', 'atom', 'geom', 'atoms_to_localize'}
+    case_sensitive = {'corebasis', 'regularbasis', 'atom', 'geom', 'atoms_to_localize', 'dospecialbasis'}
     for i, param in enumerate(parameters):
         if i == 0: continue
         key, val = param.split('=')
@@ -351,6 +400,8 @@ if __name__ == "__main__":
     assert 'corebasis' in paramDic, 'You must specify the basis set for atom that will be excited (use corebasis=)'
     if 'localize' in paramDic:
         paramDic['localize'] = strToBool[paramDic['localize']]
+    if 'doSpecialBasis' in paramDic:
+        paramDic['doSpecialBasis'] = strToBool[paramDic['doSpecialBasis']]
 
     toInt = 'orbital scf_maxcycles diis_start diis_space'.split()
     for key in toInt:
@@ -363,3 +414,4 @@ if __name__ == "__main__":
     predictor = CEBECalculator(paramDic)
     # print(paramDic)
     predictor.run() 
+    # CebeCalc = CEBECalculator({'atom': "O", "orbital": 0, "geom": "geom.xyz", "corebasis": "cc-pVDZ", "regularbasis": "cc-pVDZ", })

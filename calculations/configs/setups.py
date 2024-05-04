@@ -1,6 +1,6 @@
 GEN_CONFIG = dict(
     doMP2 = True,
-    doMP3 = True,
+    doMP3 = False,
     doCCSD = True,
     doTriples = True,
     doSFX = True,
