@@ -1,5 +1,6 @@
 import load_params
 import os 
+from pathlib import Path
 import configs
 import json
 from typing import Dict
@@ -78,28 +79,14 @@ class SubmitGenerator:
             coreBases.append(core)
             markList.append(core)
         return regBases, coreBases, markList
-            
-
+    
     def create_scripts(self, params):
-        """Creates a bash script with specified parameters
-
-        Args:
-            params (dict): a parsed dictionary of parameters created by load_parameters.py
-        """
+        """Creates a bash script with specified parameters."""
         atom = params['atom']
-        mols = params.get('mols', None)
-        molsLoc = params.get('mols(loc)', None)
-        memory = params.get('memory', configs.parameters.GENERAL_RAM_MEMORY) # if you don't specify memory, it'll be set to default value specified in configs.parameters
+        mols = params.get('mols')
+        molsLoc = params.get('mols(loc)')
+        memory = params.get('memory', configs.parameters.GENERAL_RAM_MEMORY)
         time = params.get('time', configs.parameters.GENERAL_TIME_LIMIT)
-        if "basespairs" in params:
-            regBases, coreBases, markList = self.process_base_pairs(params['basespairs']) 
-        else:
-            bases = params.get('bases', configs.parameters.GENERAL_BASES)
-            regBases, coreBases, markList = self.process_bases(bases) 
-        cores = params.get('cores', configs.parameters.GENERAL_CORES)
-        partition = params.get('partition', '')
-        memToCluster = configs.parameters.MEMORY_TO_CLUSTER
-        memToCores = configs.parameters.MEMORY_TO_CORES
         extraParams = ''
         for extraParam in {'diis_start', 'diis_space', 'max_scfcycles', 'level_shift'}:
             if extraParam in params:
@@ -108,71 +95,83 @@ class SubmitGenerator:
             if extraParam in params:
                 extraParams += f"{extraParam}=\"{params[extraParam]}\""
 
-        cluster = memToCluster[max([mem for mem in memToCluster.keys() if int(memory) >= mem])] #select a cluster that corresponds to a largest key s.t. the key is smaller than requirement
-        # cores = memToCores[max([mem for mem in memToCores.keys() if int(memory) >= mem])]
-        memory = f'{memory}000' # convert GB to MB
-        if cluster == 'telemachus':
-            partition = f'\n#SBATCH -p {partition}' # for some reason telemachus requires you to specify a partition if you have a big request
+        if "basespairs" in params:
+            regBases, coreBases, markList = self.process_base_pairs(params['basespairs'])
+            extraParams += "doSpecialBasis=true"
         else:
-            partition = ''
+            bases = params.get('bases', configs.parameters.GENERAL_BASES)
+            regBases, coreBases, markList = self.process_bases(bases)
+        cores = params.get('cores', configs.parameters.GENERAL_CORES)
+        partition = params.get('partition', '')
 
-        suffix = {True: '_loc', False: ''} # used for job name
-        
+        memToCluster = configs.parameters.MEMORY_TO_CLUSTER
+        cluster = memToCluster[max([mem for mem in memToCluster.keys() if int(memory) >= mem])] #select a cluster that corresponds to a largest key s.t. the key is smaller than requirement
+        memory = f'{int(memory) * 1000}'  # Convert GB to MB for script compatibility
+        partition = f'\n#SBATCH -p {partition}' if cluster == 'telemachus' else ''
+
+        suffix = {True: '_loc', False: ''}
+        scripts_directory = Path(f'submitscripts{os.sep}{cluster}')
+        scripts_directory.mkdir(parents=True, exist_ok=True)
+
         for molList, doLoc in ((mols, False), (molsLoc, True)):
-            if not molList: continue
-            script = '''#!/bin/bash
+            if not molList:
+                continue
+            script = self.generate_bash_script(atom, time, cores, memory, regBases, coreBases, markList, molList, partition, doLoc, extraParams, suffix[doLoc])
+            filename = scripts_directory / f'generated_{atom}_{self.cntr}{suffix[doLoc]}.sh'
+            with open(filename, 'w') as file:
+                file.write(script)
+            self.fnames.add(str(filename))
+            self.clusterToFnames.setdefault(cluster, set()).add(str(filename))
+            self.cntr += 1
+
+    def generate_bash_script(self, atom, time, cores, memory, regBases, coreBases, markList, molList, partition, doLoc, extraParams, suffix):
+        regBases_str = ' '.join(f'"{item}"' for item in regBases)
+        coreBases_str = ' '.join(f'"{item}"' for item in coreBases)
+        markList_str = ' '.join(f'"{item}"' for item in markList)
+        mols_str = ' '.join(f'"{item}"' for item in molList.split())
+        localize_flag = 'true' if doLoc else 'false'
+        return f"""#!/bin/bash
 
 run_path=$PWD
-geom_path="$run_path/mols/exp/%s"
-out_path="$run_path/mom/%s/"
+geom_path="$run_path/mols/exp/{atom}"
+out_path="$run_path/mom/{atom}/"
 
-run_time="%s:00:00"
-nproc=%s
+run_time="{time}:00:00"
+nproc={cores}
 nodes=1
-mem=%s
+mem={memory}
 
-regBases=%s
-coreBases=%s
-markList=%s
+regBases=({regBases_str})
+coreBases=({coreBases_str})
+markList=({markList_str})
 methods="mom"
 
-mols="%s"
+mols=({mols_str})
 
 for method in $methods
 do
     mkdir -p $out_path
     cd $out_path
     
-        for mol in $mols
-        do
-                mkdir -p $mol 
-                cd $mol
+    for mol in "${{mols[@]}}"
+    do
+        mkdir -p $mol 
+        cd $mol
                 
-        #nelec=$(sed '2q;d' $geom_path/$mol.xyz | awk '{print $1}')
-        #core_atom=$(sed '2q;d' $geom_path/$mol.xyz | awk '{print $2}')
-        nswap=$(sed '2q;d' $geom_path/$mol.xyz | awk '{print $3}')
-        heavyatom=$(sed '2q;d' $geom_path/$mol.xyz | awk '{print $2}')
-        for baseIndex in "${!regBases[@]}"
+        nswap=$(sed '2q;d' $geom_path/$mol.xyz | awk '{{print $3}}')
+        heavyatom=$(sed '2q;d' $geom_path/$mol.xyz | awk '{{print $2}}')
+        for baseIndex in "${{!regBases[@]}}"
         do
-            reg=${regBases[baseIndex]}
-            core=${coreBases[baseIndex]}
-            mark=${markList[baseIndex]}
-        # done
-        # for zeta in $zetas
-        # do
-            # def_basis="cc-pV${zeta}Z"
-            # core_basis="cc-pCV${zeta}Z"
-            if [ $mark = "None" ]; then
-                zeta=$reg
-            else
-                zeta=$mark
-            fi
+            reg=${{regBases[baseIndex]}}
+            core=${{coreBases[baseIndex]}}
+            mark=${{markList[baseIndex]}}
+            zeta=$([ "$mark" = "None" ] && echo "$reg" || echo "$mark")
             mkdir -p $zeta
             cd $zeta
 
-                        cat > submit.sh << eof
+            cat > submit.sh << eof
 #!/bin/sh
-%s
+{partition}
 #SBATCH -t $run_time
 #SBATCH -o sbatch.out
 #SBATCH -e sbatch.err
@@ -185,25 +184,146 @@ export MKL_NUM_THREADS=$nproc
 export OPENBLAS_NUM_THREADS=$nproc
 export NUMEXPR_NUM_THREADS=$nproc
 
-python3 $run_path/run_${method}.py atom=$heavyatom orbital=$nswap geom=$geom_path/$mol.xyz corebasis=$core regularbasis=$reg localize=%s %s > pyscf_output_$method.txt 
+python3 $run_path/run_${{method}}.py atom=$heavyatom orbital=$nswap geom=$geom_path/$mol.xyz corebasis=$core regularbasis=$reg localize={localize_flag} {extraParams} > pyscf_output_$method.txt 
 eof
 
-                        sbatch -J CEBE_${mol}_${zeta}%s submit.sh
+            sbatch -J CEBE_${{mol}}_${{zeta}}{suffix} submit.sh
             
-            echo $mol $method $zeta done	
-            cd .. # $mol
+            echo $mol $method $zeta done
+            cd .. # back to $mol
         done
 
-                cd ..
-        done
+        cd ..
+    done
     cd ..
 done
-    ''' % (atom, atom, time, cores, memory, regBases, coreBases, markList, molList, partition, doLoc, extraParams, suffix[doLoc])
-            with open(fname:=f'submitscripts{os.sep}{cluster}{os.sep}generated_{atom}_{self.cntr}{suffix[doLoc]}.sh', 'w') as f:
-                f.write(script)
-                self.fnames.add(fname)
-                self.clusterToFnames.setdefault(cluster, set()).add(fname)
-                self.cntr += 1
+"""
+            
+
+#     def create_scripts(self, params):
+#         """Creates a bash script with specified parameters
+
+#         Args:
+#             params (dict): a parsed dictionary of parameters created by load_parameters.py
+#         """
+#         atom = params['atom']
+#         mols = params.get('mols', None)
+#         molsLoc = params.get('mols(loc)', None)
+#         memory = params.get('memory', configs.parameters.GENERAL_RAM_MEMORY) # if you don't specify memory, it'll be set to default value specified in configs.parameters
+#         time = params.get('time', configs.parameters.GENERAL_TIME_LIMIT)
+#         if "basespairs" in params:
+#             regBases, coreBases, markList = self.process_base_pairs(params['basespairs']) 
+#         else:
+#             bases = params.get('bases', configs.parameters.GENERAL_BASES)
+#             regBases, coreBases, markList = self.process_bases(bases) 
+#         cores = params.get('cores', configs.parameters.GENERAL_CORES)
+#         partition = params.get('partition', '')
+#         memToCluster = configs.parameters.MEMORY_TO_CLUSTER
+#         memToCores = configs.parameters.MEMORY_TO_CORES
+        # extraParams = ''
+        # for extraParam in {'diis_start', 'diis_space', 'max_scfcycles', 'level_shift'}:
+        #     if extraParam in params:
+        #         extraParams += f"{extraParam}={params[extraParam]}"
+        # for extraParam in {'atoms_to_localize'}:
+        #     if extraParam in params:
+        #         extraParams += f"{extraParam}=\"{params[extraParam]}\""
+
+        # cluster = memToCluster[max([mem for mem in memToCluster.keys() if int(memory) >= mem])] #select a cluster that corresponds to a largest key s.t. the key is smaller than requirement
+#         # cores = memToCores[max([mem for mem in memToCores.keys() if int(memory) >= mem])]
+#         memory = f'{memory}000' # convert GB to MB
+#         if cluster == 'telemachus':
+#             partition = f'\n#SBATCH -p {partition}' # for some reason telemachus requires you to specify a partition if you have a big request
+#         else:
+#             partition = ''
+
+#         suffix = {True: '_loc', False: ''} # used for job name
+        
+#         for molList, doLoc in ((mols, False), (molsLoc, True)):
+#             if not molList: continue
+#             script = '''#!/bin/bash
+
+# run_path=$PWD
+# geom_path="$run_path/mols/exp/%s"
+# out_path="$run_path/mom/%s/"
+
+# run_time="%s:00:00"
+# nproc=%s
+# nodes=1
+# mem=%s
+
+# regBases=%s
+# coreBases=%s
+# markList=%s
+# methods="mom"
+
+# mols="%s"
+
+# for method in $methods
+# do
+#     mkdir -p $out_path
+#     cd $out_path
+    
+#         for mol in $mols
+#         do
+#                 mkdir -p $mol 
+#                 cd $mol
+                
+#         #nelec=$(sed '2q;d' $geom_path/$mol.xyz | awk '{print $1}')
+#         #core_atom=$(sed '2q;d' $geom_path/$mol.xyz | awk '{print $2}')
+#         nswap=$(sed '2q;d' $geom_path/$mol.xyz | awk '{print $3}')
+#         heavyatom=$(sed '2q;d' $geom_path/$mol.xyz | awk '{print $2}')
+#         for baseIndex in "${!regBases[@]}"
+#         do
+#             reg=${regBases[baseIndex]}
+#             core=${coreBases[baseIndex]}
+#             mark=${markList[baseIndex]}
+#         # done
+#         # for zeta in $zetas
+#         # do
+#             # def_basis="cc-pV${zeta}Z"
+#             # core_basis="cc-pCV${zeta}Z"
+#             if [ $mark = "None" ]; then
+#                 zeta=$reg
+#             else
+#                 zeta=$mark
+#             fi
+#             mkdir -p $zeta
+#             cd $zeta
+
+#                         cat > submit.sh << eof
+# #!/bin/sh
+# %s
+# #SBATCH -t $run_time
+# #SBATCH -o sbatch.out
+# #SBATCH -e sbatch.err
+# #SBATCH -c $nproc
+# #SBATCH -N $nodes
+# #SBATCH --mem=$mem
+
+# export OMP_NUM_THREADS=$nproc
+# export MKL_NUM_THREADS=$nproc
+# export OPENBLAS_NUM_THREADS=$nproc
+# export NUMEXPR_NUM_THREADS=$nproc
+
+# python3 $run_path/run_${method}.py atom=$heavyatom orbital=$nswap geom=$geom_path/$mol.xyz corebasis=$core regularbasis=$reg localize=%s %s > pyscf_output_$method.txt 
+# eof
+
+#                         sbatch -J CEBE_${mol}_${zeta}%s submit.sh
+            
+#             echo $mol $method $zeta done	
+#             cd .. # $mol
+#         done
+
+#                 cd ..
+#         done
+#     cd ..
+# done
+#     ''' % (atom, atom, time, cores, memory, regBases, coreBases, markList, molList, partition, doLoc, extraParams, suffix[doLoc])
+#             with open(fname:=f'submitscripts{os.sep}{cluster}{os.sep}generated_{atom}_{self.cntr}{suffix[doLoc]}.sh', 'w') as f:
+#                 f.write(script)
+#                 self.fnames.add(fname)
+#                 self.clusterToFnames.setdefault(cluster, set()).add(fname)
+#                 self.cntr += 1
 
     def main(self):
         """Main workhorse. 
