@@ -89,7 +89,7 @@ class SingleZetaResults:
         )
 
     def all_results(self, save_folder: str):
-        for atom in "C N O F".split():
+        for atom in self.atomToData.keys():
             for basis in "D T Q 5".split():
                 path = os.path.join(save_folder, f"{atom}-{basis}Z")
                 self.series_table(atom.lower(), basis, path)
@@ -187,9 +187,10 @@ class MethodSummary:
         )
 
     def all_results(self):
-        atoms = "C N O F".split()
-        bases = "D T Q 5".split()
+        atoms = self.atomToBasisStats.keys()
         for atom in atoms:
+            # bases = self.atomToBasisStats[atom].keys()
+            bases = "D ccX-DZ pcX-1 T ccX-TZ pcX-2 Q ccX-QZ pcX-3 5 ccX-5Z pcX-4".split()
             path = os.path.join(self.save_folder, f"{atom}-summary")
             self.series_table(atom.lower(), bases, path)
 

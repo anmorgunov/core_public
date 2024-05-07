@@ -153,6 +153,8 @@ class ParsedData:
                         if f"CEBE_{algorithm}.txt" not in files:
                             basisToData["error"] = "No CEBE file"
                             err = os.path.join(basPath, "sbatch.err")
+                            if "sbatch.err" not in files:
+                                continue
                             errFile = open(err, "r").readlines()
                             if errFile:
                                 basisToData["detailed"] = errFile[-1].split("\n")[0]
@@ -310,6 +312,8 @@ class ParsedData:
         filtered_algoToData = {}
         for algorithm, atomData in algoToData.items():
             for atom, molData in atomData.items():
+                if atom not in atomToMols:
+                    continue
                 for molecule, basData in molData.items():
                     if molecule in atomToMols[atom]:
                         filtered_algoToData.setdefault(algorithm, {}).setdefault(

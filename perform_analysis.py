@@ -17,8 +17,10 @@ def print(args):
     pp.pprint(args)
 
 
-BASE_PATH = os.path.dirname(__file__)
-DATA_PATH = os.path.join(BASE_PATH, "Data")
+from pathlib import Path
+
+BASE_PATH = Path(__file__).resolve().parent
+DATA_PATH = BASE_PATH / "Data"
 
 # --------------- PERFORM PARSING ---------------
 experimental_wb = os.path.join(DATA_PATH, "experimental.xlsx")
@@ -37,7 +39,7 @@ pobj.main(save=False)
 # of certain molecules of interest, you can use the method below
 mols = set("h2o co co2".split())  # specify molecules you're interested in
 fname = "o-series"  # specify the file name to which this will be saved
-extracted_path = os.path.join(BASE_PATH, "Data", "extracts", f"{fname}.xlsx")
+# extracted_path = os.path.join(BASE_PATH, "Data", "extracts", f"{fname}.xlsx")
 # pobj.extract_molecules(mols, extracted_path)
 
 # --------------- PERFORM EXTRAPOLATION ---------------
@@ -60,12 +62,18 @@ eobj = Extrapolation.WholeDataset()
 # print(f"{r1=}\n{r2=}\n{r3=}\n{r4=}")
 
 # First, let's filter out the molecules we want to use
+# ATOM_TO_MOLS = constants.ATOM_TO_MOLS
+ATOM_TO_MOLS = {
+    "O": "h2o ch3oh co hcho co2 c4h4o ch3coch3 ch3och3 hcooch3 hcooh c2h5oh ch3cooh"
+    + " cf3c-o-oh cf3co-o-h ch2chcho ch3c-o-oh ch3n-o2 h2nc-o-nh2 h2nch-o hc-o-och3 hnc-o ipr-oh pr-oh ch3c-o-och3 ch3co-o-ch3"
+}
 atomToMols = {
-    atom.lower(): set(molStr.split()) for atom, molStr in constants.ATOM_TO_MOLS.items()
+    atom.lower(): set(molStr.split()) for atom, molStr in ATOM_TO_MOLS.items()
 }
 
 filteredData = pobj.filter_data_by_molecules(pobj.algoToData, atomToMols)
 filteredData = pobj.filter_by_presence_of_experimental(filteredData)
+
 # pp.pprint(atomToMols)
 
 # eobj.extrapolate_all_data(
@@ -101,31 +109,33 @@ table2 = CreateTables.MethodSummary(
     pobj.algoToStats["mom"],
     pobj.algoToAtomStats["mom"],
     save_folder=os.path.join(DATA_PATH, "paper-tables", "method-summaries"),
-    show_sample_size=False,
-    isPublication=True,
+    show_sample_size=True,
+    isPublication=False,
 )
 table2.all_results()
 
-table3 = CreateTables.ExtrapSchemeSummary(
-    eobj.algoToStats["mom"],
-    eobj.algoToAtomStats["mom"],
-    save_folder=os.path.join(DATA_PATH, "paper-tables", "extrap-summaries"),
-    show_sample_size=False,
-    isPublication=True,
-)
-# print(eobj.algoToAtomStats['mom']['o'])
-eobj._schemeIterKeys = ["HF", "CCSD", "MP2"]
-table3.results_for_schemes(scheme_factory=eobj.scheme_generator)
+# # breakpoint()
 
-table4 = CreateTables.UsedGeometries(
-    geom_wb=os.path.join(DATA_PATH, "geometriesDB.xlsx"),
-    save_folder=os.path.join(DATA_PATH, "paper-tables", "geometries"),
-)
-relevantMols = {
-    atom: set(molData.keys()) for atom, molData in filteredData["mom"].items()
-}
+# table3 = CreateTables.ExtrapSchemeSummary(
+#     eobj.algoToStats["mom"],
+#     eobj.algoToAtomStats["mom"],
+#     save_folder=os.path.join(DATA_PATH, "paper-tables", "extrap-summaries"),
+#     show_sample_size=False,
+#     isPublication=True,
+# )
+# # print(eobj.algoToAtomStats['mom']['o'])
+# eobj._schemeIterKeys = ["HF", "CCSD", "MP2"]
+# table3.results_for_schemes(scheme_factory=eobj.scheme_generator)
 
-table4.main(relevantMols)
+# table4 = CreateTables.UsedGeometries(
+#     geom_wb=os.path.join(DATA_PATH, "geometriesDB.xlsx"),
+#     save_folder=os.path.join(DATA_PATH, "paper-tables", "geometries"),
+# )
+# relevantMols = {
+#     atom: set(molData.keys()) for atom, molData in filteredData["mom"].items()
+# }
+
+# table4.main(relevantMols)
 
 # --------------- CREATE FIGURES ---------------
 # CreateFigures._manual_delay()
@@ -161,10 +171,10 @@ mp2_w5 = "MP2[D T Q 5]+DifD | MP2[D T Q 5]+DifD(T) | MP2[T Q 5]+DifD | MP2[T Q 5
 #     eobj.algoToAtomStats["mom"], mp2_w5, mp2Colors, figures_path, suffix="-mp2-w5"
 # )
 
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
-eobj.calculate_errors(pobj.molToExper)
-eobj.calculate_series_statistics()
-eobj.calculate_overall_statistics()
+# eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
+# eobj.calculate_errors(pobj.molToExper)
+# eobj.calculate_series_statistics()
+# eobj.calculate_overall_statistics()
 
 # for include_pentuple in (True, False):
 #     CreateFigures.extrap_err_bars_summary(eobj.algoToAtomStats["mom"], figures_path, include_pentuple)
@@ -181,39 +191,39 @@ eobj.calculate_overall_statistics()
 #         eobj.algoToCBS["mom"], figures_path, include_pentuple
 #     )
 
-ccColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
-mpColors = ["#e0aaff", "#c77dff", "#9d4edd", "#7b2cbf"]
-dStudy_xTitle = "Error from extrapolations<br>including double-zeta basis"
-dStudy_yTitle = "Error from extrapolations<br>excluding double-zeta basis"
-for dEffect, suffix, axrange in (
-    (["D-T-Q-CCSD", "T-Q-CCSD"], "_dstudy-cc", [-0.79, 0.79]),
-    (["D-T-Q-CCSD(T)", "T-Q-CCSD(T)"], "_dstudy-cc-triples", [-1.09, 0.59]),
-    (["MP2[D T Q]+DifD", "MP2[T Q]+DifD"], "_dstudy-mp", [-0.79, 0.79]),
-    (["MP2[D T Q]+DifD(T)", "MP2[T Q]+DifD(T)"], "_dstudy-mp-triples", [-1.09, 0.59]),
-    (["T-Q-CCSD", "T-Q-CCSD(T)"], "_tstudy-cc", [-0.79, 0.79]),
-    (["D-T-Q-CCSD", "D-T-Q-CCSD(T)"], "_tstudy-cc-double", [-1.09, 0.59]),
-    (["MP2[T Q]+DifD", "MP2[T Q]+DifD(T)"], "_tstudy-mp", [-0.79, 0.79]),
-    (["MP2[D T Q]+DifD", "MP2[D T Q]+DifD(T)"], "_tstudy-mp-double", [-1.09, 0.59]),
-):
-    if "mp" in suffix:
-        colors = mpColors
-    else:
-        colors = ccColors
-    # CreateFigures.correlate_study(
-    #     eobj.algoToAtomStats["mom"],
-    #     dEffect,
-    #     xtitle=dStudy_xTitle,
-    #     ytitle=dStudy_yTitle,
-    #     axrange=axrange,
-    #     suffix=suffix,
-    #     colors=colors,
-    #     save_path=figures_path,
-    # )
+# ccColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
+# mpColors = ["#e0aaff", "#c77dff", "#9d4edd", "#7b2cbf"]
+# dStudy_xTitle = "Error from extrapolations<br>including double-zeta basis"
+# dStudy_yTitle = "Error from extrapolations<br>excluding double-zeta basis"
+# for dEffect, suffix, axrange in (
+#     (["D-T-Q-CCSD", "T-Q-CCSD"], "_dstudy-cc", [-0.79, 0.79]),
+#     (["D-T-Q-CCSD(T)", "T-Q-CCSD(T)"], "_dstudy-cc-triples", [-1.09, 0.59]),
+#     (["MP2[D T Q]+DifD", "MP2[T Q]+DifD"], "_dstudy-mp", [-0.79, 0.79]),
+#     (["MP2[D T Q]+DifD(T)", "MP2[T Q]+DifD(T)"], "_dstudy-mp-triples", [-1.09, 0.59]),
+#     (["T-Q-CCSD", "T-Q-CCSD(T)"], "_tstudy-cc", [-0.79, 0.79]),
+#     (["D-T-Q-CCSD", "D-T-Q-CCSD(T)"], "_tstudy-cc-double", [-1.09, 0.59]),
+#     (["MP2[T Q]+DifD", "MP2[T Q]+DifD(T)"], "_tstudy-mp", [-0.79, 0.79]),
+#     (["MP2[D T Q]+DifD", "MP2[D T Q]+DifD(T)"], "_tstudy-mp-double", [-1.09, 0.59]),
+# ):
+#     if "mp" in suffix:
+#         colors = mpColors
+#     else:
+#         colors = ccColors
+# CreateFigures.correlate_study(
+#     eobj.algoToAtomStats["mom"],
+#     dEffect,
+#     xtitle=dStudy_xTitle,
+#     ytitle=dStudy_yTitle,
+#     axrange=axrange,
+#     suffix=suffix,
+#     colors=colors,
+#     save_path=figures_path,
+# )
 
 
 # --------------- ANALYZE TIMING ---------------
 
-TimingObj = Timing.Timer(
-    calc_path=os.path.join(DATA_PATH, "calculations", "mom"), atoms={"c", "n", "o", "f"}
-)
-TimingObj.main(save_path=DATA_PATH)
+# TimingObj = Timing.Timer(
+#     calc_path=DATA_PATH / "calculations" / "mom", atoms={"o"}#{"c", "n", "o", "f"}
+# )
+# TimingObj.main(save_path=DATA_PATH)
