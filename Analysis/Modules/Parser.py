@@ -1,43 +1,39 @@
-import os
+from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
 import numpy as np
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
-Number = Union[float, int]
-ExperDataType = Dict[str, Number]
-BasisDataType = Dict[str, Union[str, Number]]
+ExperDataType = Dict[str, float]
+DataPointType = Dict[str, Union[str, float]]
+BasisDataType = Dict[str, DataPointType]
 MoleculeDataType = Dict[str, BasisDataType]
 AtomDataType = Dict[str, MoleculeDataType]
 AlgoDataType = Dict[str, AtomDataType]
 
-BasisStatsType = Dict[str, Dict[str, Number]]
-AtomBasisStatsType = Dict[str, BasisStatsType]
+MethodErrorType = Dict[str, float]
+BasisErrorType = Dict[str, MethodErrorType]
+MoleculeErrorType = Dict[str, BasisErrorType]
+AtomErrorType = Dict[str, MoleculeErrorType]
+AlgoErrorType = Dict[str, AtomErrorType]
+
+MethodErrorsType = Dict[str, List[float]]
+BasisErrorsType = Dict[str, MethodErrorsType]
+AlgoErrorsType = Dict[str, BasisErrorsType]
+AtomErrorsType = Dict[str, BasisErrorsType]
+AlgoAtomErrorsType = Dict[str, AtomErrorsType]
+
+StatsType = Dict[str, float]
+MethodStatsType = Dict[str, StatsType]
+BasisStatsType = Dict[str, MethodStatsType]
 AlgoStatsType = Dict[str, BasisStatsType]
+AtomBasisStatsType = Dict[str, BasisStatsType]
 AlgoAtomStatsType = Dict[str, AtomBasisStatsType]
 
-
-CALC_WB_COLS = {
-    "B": "Molecule",
-    "C": "Method",
-    "D": "Basis",
-    "E": "Atom",
-    "F": "UHF",
-    "G": "MP2",
-    "H": "MP3",
-    "I": "CCSD",
-    "J": "CCSD(T)",
-    "K": "Exper.",
-    "L": "Frozen",
-    "M": "Swapped",
-    "N": "T1 for RHF",
-    "O": "T1 for UHF(a)",
-    "P": "T1 for UHF(b)",
-    "Q": "Error",
-    "R": "Comments",
-    "S": "Custom Notes",
-}
+# fmt:off
+CALC_WB_COLS = {"B": "Molecule","C": "Method","D": "Basis","E": "Atom","F": "UHF","G": "MP2","H": "MP3","I": "CCSD","J": "CCSD(T)","K": "Exper.","L": "Frozen","M": "Swapped","N": "T1 for RHF","O": "T1 for UHF(a)","P": "T1 for UHF(b)","Q": "Error","R": "Comments","S": "Custom Notes"}
+# fmt:on
 
 
 def get_next_col(col: str, prefix: Optional[str] = None) -> str:
@@ -60,23 +56,15 @@ class ParsedData:
     This object takes an excel file with parsed data and updates it with new results. The advantage of this approach is that any custom comments left in column L in CEBE_Data file are preserved.
     """
 
-    specialBases = {
-        "ccX-DZ",
-        "ccX-TZ",
-        "ccX-QZ",
-        "ccX-5Z",
-        "pcX-1",
-        "pcX-2",
-        "pcX-3",
-        "pcX-4",
-    }
+    # fmt:off
+    specialBases = {"ccX-DZ","ccX-TZ","ccX-QZ","ccX-5Z","pcX-1","pcX-2","pcX-3","pcX-4",}  # fmt:on
 
     def __init__(
         self,
         experimental_wb: str,
-        calculations_folder: str,
-        algorithms: List[str],
         calculations_wb: str,
+        algorithms: List[str],
+        calculations_folder: Path,
         do_average_experimental: bool = True,
     ):
         """
@@ -84,8 +72,8 @@ class ParsedData:
         """
         self.experWB = load_workbook(experimental_wb)
         self.readWB = load_workbook(calculations_wb)
-        self.savePath = calculations_wb
-        self.calcPath = calculations_folder
+        self.save_path = calculations_wb
+        self.calc_path = calculations_folder
 
         self.saveWB = Workbook()
 
@@ -93,14 +81,15 @@ class ParsedData:
         self.doAverageExperimental = do_average_experimental
 
         self.algorithms = algorithms
-        self.algoToData = {}
+        self.algoToData: AlgoDataType = {}
 
         self.debug = False
 
         self.font = Font(name="Helvetica", size=12)
         self.cols = "B C D E F G H I J K L M N O P Q R S"
+        # algo -> atom -> molecule -> basis -> method -> data (str, float)
 
-    def _parse_calculations(self):
+    def _parse_calculations(self) -> None:
         """
         Parse data from folders listed in self.algorithmToFolders and store it in a molToData dictionary
 
@@ -118,82 +107,61 @@ class ParsedData:
 
         P.S. This is already implemented to work with different algorithms (mom, sgm, coreless). Just use a different key in algorithmToFolders
         """
+        algoToData = self.algoToData
         for algorithm in self.algorithms:
-            algoPath = os.path.join(self.calcPath, algorithm)
-            atoms = [
-                item
-                for item in os.listdir(algoPath)
-                if os.path.isdir(os.path.join(algoPath, item)) and item != ".DS_Store"
-            ]
+            algo_path = self.calc_path / algorithm
+            atoms = [item.name for item in algo_path.glob("*/")]
             if self.debug:
                 print(f"{atoms=}")
             for atom in atoms:
-                atomToData: AtomDataType = self.algoToData.setdefault(
-                    algorithm, {}
-                ).setdefault(atom, {})
-
+                molToData = algoToData.setdefault(algorithm, {}).setdefault(atom, {})
                 if self.debug:
-                    print(f"{self.algoToData=}, {atomToData=}")
-                atomPath = os.path.join(algoPath, atom)
-                molecules = [
-                    molecule
-                    for molecule in os.listdir(atomPath)
-                    if os.path.isdir(os.path.join(atomPath, molecule))
-                ]
+                    print(f"{self.algoToData=}, {molToData=}")
+                atom_path = algo_path / atom
+                molecules = [molecule.name for molecule in atom_path.glob("*/")]
                 if self.debug:
                     print(f"{molecules=}")
                 for molecule in molecules:
-                    molPath = os.path.join(atomPath, molecule)
-                    bases = [
-                        basis
-                        for basis in os.listdir(molPath)
-                        if os.path.isdir(os.path.join(molPath, basis))
-                    ]
+                    mol_path = atom_path / molecule
+                    bases = [basis.name for basis in mol_path.glob("*/")]
                     if self.debug:
                         print(f"{bases=}")
                     for basis in bases:
-                        basisToData: BasisDataType = atomToData.setdefault(
-                            molecule, {}
-                        ).setdefault(basis, {})
-                        basPath = os.path.join(molPath, basis)
-                        files = os.listdir(basPath)
-                        if self.debug:
-                            print(f"{files=}")
+                        basisToData = molToData.setdefault(molecule, {})
+                        data_point = basisToData.setdefault(basis, {})
+                        bas_path = mol_path / basis
+                        result_file = bas_path / f"CEBE_{algorithm}.txt"
 
-                        # Case 1. Calculation was unsuccesful and did not terminate normally
-                        if algorithm == "gracemom":
-                            suffix = "mom"
-                        else:
-                            suffix = "mom"
-                        if f"CEBE_{suffix}.txt" not in files:
-                            basisToData["error"] = "No CEBE file"
-                            err = os.path.join(basPath, "sbatch.err")
-                            if "sbatch.err" not in files:
-                                basisToData["detailed"] = "empty?"
-                                continue
-                            errFile = open(err, "r").readlines()
-                            if errFile:
-                                basisToData["detailed"] = errFile[-1].split("\n")[0]
-                            else:
-                                basisToData["detailed"] = "empty?"
-                        # Case 2. Calculation terminated normally
-                        else:
-                            result = os.path.join(basPath, f"CEBE_{suffix}.txt")
-                            lines = open(result, "r").readlines()
+                        # Case 1. Calculation terminated normally
+                        if result_file.exists():
+                            lines = open(result_file, "r").readlines()
                             for rline in lines:
                                 line = rline.split("\n")[0]
                                 if ":" in line:
                                     key, val = rline.split("\n")[0].split(":")
-                                    basisToData[key] = val
+                                    data_point[key] = val
                                     continue
                                 if "=" not in line:
                                     continue
                                 rmethod, rvalue = line.split(" = ")
                                 value = float(rvalue.split(" ")[0])
                                 posthf_method = rmethod.split(" ")[1][1:-1]
-                                basisToData[posthf_method] = value
+                                data_point[posthf_method] = value
+                        # Case 2. Calculation was unsuccesful and did not terminate normally
+                        else:
+                            data_point["error"] = "No CEBE file"
+                            err_file = bas_path / "sbatch.err"
+                            if err_file.exists():
+                                errFile = open(err_file, "r").readlines()
+                                if errFile:
+                                    data_point["detailed"] = errFile[-1].split("\n")[0]
+                                else:
+                                    data_point["detailed"] = "empty?"
+                            else:
+                                data_point["detailed"] = "empty?"
+                                continue
 
-    def _parse_experimental(self):
+    def _parse_experimental(self) -> None:
         """
         Parse data from experimental_wb file and create a dictionary mapping molecule name (which is used to denote file names) to experimental values
         """
@@ -223,15 +191,23 @@ class ParsedData:
             row += 1
         self.molToExper = data
 
-    def _calculate_mp25(self):
+    def _calculate_mp25(self) -> None:
         for atomData in self.algoToData.values():
             for molData in atomData.values():
                 for basData in molData.values():
                     for data in basData.values():
                         if "MP2" in data and "MP3" in data:
+                            if not isinstance(data["MP2"], float):
+                                raise TypeError(
+                                    f"Expected float for MP2, got {data['MP2']}"
+                                )
+                            if not isinstance(data["MP3"], float):
+                                raise TypeError(
+                                    f"Expected float for MP3, got {data['MP3']}"
+                                )
                             data["MP2.5"] = (data["MP2"] + data["MP3"]) / 2
 
-    def _update_calculation_wb(self):
+    def _update_calculation_wb(self) -> None:
         """
         Write the contents of self.algoToData from parse_results to a CEBE_Data file, preserving any comments in column L (currently not used)
         """
@@ -291,14 +267,14 @@ class ParsedData:
 
                         r += 1
 
-        self.saveWB.save(self.savePath)
+        self.saveWB.save(self.save_path)
 
-    def extract_molecules(self, mols: Set[str], save_path: str):
+    def extract_molecules(self, mols: Set[str], save_path: str) -> None:
         """ """
         new_wb = Workbook()
         new_ws = new_wb["Sheet"]
 
-        wb = load_workbook(self.savePath)
+        wb = load_workbook(self.save_path)
         ws = wb["Sheet"]
 
         row = 3
@@ -325,7 +301,7 @@ class ParsedData:
     def filter_data_by_molecules(
         self, algoToData: AlgoDataType, atomToMols: Dict[str, Set[str]]
     ) -> AlgoDataType:
-        filtered_algoToData = {}
+        filtered_algoToData: AlgoDataType = {}
         for algorithm, atomData in algoToData.items():
             for atom, molData in atomData.items():
                 if atom not in atomToMols:
@@ -341,7 +317,7 @@ class ParsedData:
     def filter_by_presence_of_experimental(
         self, algoToData: AlgoDataType
     ) -> AlgoDataType:
-        filtered_algoToData = {}
+        filtered_algoToData: AlgoDataType = {}
         for algorithm, atomData in algoToData.items():
             for atom, molData in atomData.items():
                 for molecule, basData in molData.items():
@@ -351,9 +327,9 @@ class ParsedData:
                         )[molecule] = basData
         return filtered_algoToData
 
-    def calculate_errors(self, algoToData: AlgoDataType):
+    def calculate_errors(self, algoToData: AlgoDataType) -> None:
         valid_keys = {"UHF", "MP2", "MP2.5", "MP3", "CCSD", "CCSD(T)"}
-        algoToError = {}
+        algoToError: AlgoErrorType = {}
         for algorithm, atomData in algoToData.items():
             for atom, molData in atomData.items():
                 for molecule, basData in molData.items():
@@ -363,9 +339,11 @@ class ParsedData:
                         for key, value in methodData.items():
                             if key not in valid_keys:
                                 continue
+                            if not isinstance(value, float):
+                                raise TypeError(f"Expected float, got {value}")
                             error = value - self.molToExper[molecule]
-                            if error > 1 and bas in self.specialBases:
-                                if self.debug:
+                            if self.debug:
+                                if error > 1 and bas in self.specialBases:
                                     print(
                                         f"Large error for {algorithm} {atom} {molecule} {bas} {key}: {error}"
                                     )
@@ -374,9 +352,10 @@ class ParsedData:
                             ).setdefault(molecule, {}).setdefault(bas, {})[key] = error
         self.algoToError = algoToError
 
-    def calculate_series_statistics(self):
-        assert hasattr(self, "algoToError"), "You must call calculate_errors first"
-        algoToAtomErrors = {}
+    def calculate_series_statistics(self) -> None:
+        if not hasattr(self, "algoToError"):
+            raise AttributeError("You must call calculate_errors first")
+        algoToAtomErrors: AlgoAtomErrorsType = {}
         for algorithm, atomData in self.algoToError.items():
             for atom, molData in atomData.items():
                 for basData in molData.values():
@@ -386,10 +365,10 @@ class ParsedData:
                                 atom, {}
                             ).setdefault(bas, {}).setdefault(method, []).append(value)
         algoToAtomStats: AlgoAtomStatsType = {}
-        for algorithm, atomData in algoToAtomErrors.items():
-            for atom, basData in atomData.items():
-                for bas, methodData in basData.items():
-                    for method, error_list in methodData.items():
+        for algorithm, atomErrData in algoToAtomErrors.items():
+            for atom, basErrData in atomErrData.items():
+                for bas, methodErrData in basErrData.items():
+                    for method, error_list in methodErrData.items():
                         errors = np.array(error_list)
                         abs_errs = np.abs(errors)
                         algoToAtomStats.setdefault(algorithm, {}).setdefault(
@@ -404,9 +383,10 @@ class ParsedData:
                         }
         self.algoToAtomStats = algoToAtomStats
 
-    def calculate_overall_statistics(self):
-        assert hasattr(self, "algoToError"), "You must call calculate_errors first"
-        algoToErrors = {}
+    def calculate_overall_statistics(self) -> None:
+        if not hasattr(self, "algoToError"):
+            raise AttributeError("You must call calculate_errors first")
+        algoToErrors: AlgoErrorsType = {}
         for algorithm, atomData in self.algoToError.items():
             for molData in atomData.values():
                 for basData in molData.values():
@@ -416,9 +396,9 @@ class ParsedData:
                                 bas, {}
                             ).setdefault(method, []).append(value)
         algoToStats: AlgoStatsType = {}
-        for algorithm, basData in algoToErrors.items():
-            for bas, methodData in basData.items():
-                for method, error_list in methodData.items():
+        for algorithm, basErrData in algoToErrors.items():
+            for bas, methodErrData in basErrData.items():
+                for method, error_list in methodErrData.items():
                     errors = np.array(error_list)
                     abs_errs = np.abs(errors)
                     algoToStats.setdefault(algorithm, {}).setdefault(bas, {})[
@@ -433,7 +413,7 @@ class ParsedData:
                     }
         self.algoToStats = algoToStats
 
-    def main(self, save: bool = True):
+    def process(self, save: bool = True) -> None:
         self._parse_experimental()
         self._parse_calculations()
         self._calculate_mp25()

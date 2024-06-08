@@ -1,11 +1,11 @@
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import numpy as np
 import scipy.optimize
 
-from .Parser import BasisDataType, ExperDataType
-
 Number = Union[float, int]
+ExperDataType = Dict[str, Number]
+BasisDataType = Dict[str, Union[str, Number]]
 SchemeStatsType = Dict[str, Dict[str, Number]]
 AlgoStatsType = Dict[str, SchemeStatsType]
 AtomSchemeStatsType = Dict[str, Dict[str, SchemeStatsType]]
@@ -16,14 +16,7 @@ AtomMolDataType = Dict[str, Dict[str, SchemeResultType]]
 AlgoDataType = Dict[str, AtomMolDataType]
 
 
-def rounder(dig):
-    def rounder_to_dig(float):
-        return format(np.around(float, dig), f".{dig}f")
-
-    return rounder_to_dig
-
-
-def _helgaker(zeta, a, b):
+def _helgaker(zeta: int, a: float, b: float) -> float:
     """A standard helgaker extrapolation formula. Note: a, b are parameters which we seek. We pass them as parameters not because they're known,
     but because that's how scipy.optimize works (which actually finds those parameters).
 
@@ -38,12 +31,12 @@ def _helgaker(zeta, a, b):
     return a + b * (zeta ** (-3))
 
 
-def extrapolate_energies(zetas, values):
+def extrapolate_energies(zetas: List[int], values: List[float]) -> float:
     popt, pcov = scipy.optimize.curve_fit(_helgaker, zetas, values)
-    return popt[0]
+    return cast(float, popt[0])
 
 
-def parse_scheme(scheme: str) -> Tuple[str, List[str], str, bool]:
+def parse_scheme(scheme: str) -> Tuple[str, List[str], str, bool | None]:
     if "+" in scheme:
         preargs, corr = scheme.split("+")
         args = preargs.replace("[", " ").replace("]", " ").split()
