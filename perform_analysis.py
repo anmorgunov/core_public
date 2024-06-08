@@ -1,14 +1,9 @@
-from Analysis import constants
-import Analysis
-
-from Analysis.Modules import Parser
-from Analysis.Modules import Extrapolation
-from Analysis import CreateTables
-from Analysis import CreateFigures
-from Analysis import Timing
-
 import os
 import pprint
+from pathlib import Path
+
+from Analysis import CreateTables, constants
+from Analysis.Modules import Extrapolation, Parser
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -16,8 +11,6 @@ pp = pprint.PrettyPrinter(indent=2)
 def print(args):
     pp.pprint(args)
 
-
-from pathlib import Path
 
 BASE_PATH = Path(__file__).resolve().parent
 DATA_PATH = BASE_PATH / "Data"
@@ -55,9 +48,7 @@ excludeAtomToMols = {
     "N": set(
         "mnh2pyridi-n-e onh2pyridi-n-e o-n-h2pyridine m-n-h2pyridine pfpyridine".split()
     ),
-    "O": set(
-        "cf3co-o-h cf3c-o-oh ch3co-o-ch3 ch3c-o-och3 ".split()
-    ),
+    "O": set("cf3co-o-h cf3c-o-oh ch3co-o-ch3 ch3c-o-och3 ".split()),
     "F": set("cf3ocf3".split()),
 }
 atomToMols = {
@@ -90,12 +81,12 @@ filteredData = pobj.filter_by_presence_of_experimental(filteredData)
 #         header_format,
 #         "\\midrule"
 #     ]
-    
+
 #     row_format = " & ".join(["{} & {:.2f}"] * columns) + " \\\\"
 
 #     items = [("\ch{%s}"%molecule, cebe) for atom, molToCebe in data.items() for molecule, cebe in molToCebe.items()]
 #     items_sorted = sorted(items, key=lambda x: x[-1])
-    
+
 #     for row in itertools.zip_longest(*[iter(items_sorted)]*columns, fillvalue=("", 0)):
 #         latex_table.append(row_format.format(*itertools.chain.from_iterable(row)))
 #     latex_table.extend([
@@ -104,7 +95,7 @@ filteredData = pobj.filter_by_presence_of_experimental(filteredData)
 #         "\\caption{Energies of molecules by atom}",
 #         "\\end{table}"
 #     ])
-    
+
 #     return "\n".join(latex_table)
 
 # ref_table = create_reference_values_table(atomToExper, columns=3)

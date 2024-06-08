@@ -1,5 +1,7 @@
 import os
+
 import plotly.graph_objects as go
+
 
 class Styler:
 
@@ -83,16 +85,31 @@ class Styler:
         )
 
     def add_r_equation(self, figure, r_sq, x, y, dy=0.05, num_digs=4):
-        figure.add_annotation(dict(xref='paper', yref='paper', x=x, y=y+dy,
-                              xanchor='left', yanchor='top',
-                              text=f"$R^2 = {r_sq:.{num_digs}f}$", #:.{num_digs}f
-                              font=dict(family=self.FONT,
-                                        size=self.ANNOTATION_SIZE,
-                                        color=self.BLACK),
-                              showarrow=False))
-        
+        figure.add_annotation(
+            dict(
+                xref="paper",
+                yref="paper",
+                x=x,
+                y=y + dy,
+                xanchor="left",
+                yanchor="top",
+                text=f"$R^2 = {r_sq:.{num_digs}f}$",  #:.{num_digs}f
+                font=dict(
+                    family=self.FONT, size=self.ANNOTATION_SIZE, color=self.BLACK
+                ),
+                showarrow=False,
+            )
+        )
+
     def _save_fig(
-        self, figure:go.Figure, path:str, fname:str, html:bool=False, jpg:bool=False, svg:bool=False, pdf: bool = True
+        self,
+        figure: go.Figure,
+        path: str,
+        fname: str,
+        html: bool = False,
+        jpg: bool = False,
+        svg: bool = False,
+        pdf: bool = True,
     ):
         if html:
             figure.write_html(

@@ -1,12 +1,13 @@
-import os
-from .Modules.Figure import Styler
-from .Modules.Parser import BasisStatsType, AtomBasisStatsType, Number
-from .Modules.Extrapolation import SchemeStatsType, AtomSchemeStatsType, AtomMolDataType
-from . import figureSpecs
-from typing import List, Tuple, Dict, Set
+from typing import Dict, List, Tuple
+
+import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import numpy as np
+
+from . import figureSpecs
+from .Modules.Extrapolation import AtomMolDataType, AtomSchemeStatsType, SchemeStatsType
+from .Modules.Figure import Styler
+from .Modules.Parser import AtomBasisStatsType, BasisStatsType, Number
 
 BASIS_TO_METHOD = {
     "D": "UHF MP2 CCSD CCSD(T)".split(),
@@ -23,7 +24,7 @@ BASIS_TO_METHOD["ccX-TZ"] = BASIS_TO_METHOD["T"]
 BASIS_TO_METHOD["ccX-QZ"] = BASIS_TO_METHOD["Q"]
 BASIS_TO_METHOD["ccX-5Z"] = BASIS_TO_METHOD["5"]
 
-METHOD_TO_BASIS = {}
+METHOD_TO_BASIS: Dict[str, List[str]] = {}
 for basis, methods in BASIS_TO_METHOD.items():
     for method in methods:
         METHOD_TO_BASIS.setdefault(method, []).append(basis)
@@ -34,6 +35,7 @@ METHOD_COLORS = ["#b2df8a", "#E0AAFF", "#48cae4", "#0077b6"]  # darker green 33a
 
 def _manual_delay():
     import time
+
     import plotly.express as px
 
     figure = "test.pdf"
@@ -58,7 +60,6 @@ def method_error_bars_general(basisStats: BasisStatsType, save_path: str) -> go.
     styler = Styler()
     styler.AXIS_TITLE_SIZE = 24
     styler.TICK_SIZE = 24
-    styler.LEGEND_SIZE = 22
     bases = "D T Q 5".split()
 
     for i, method in enumerate(METHOD_TO_BASIS):
@@ -103,7 +104,10 @@ def method_error_bars_general(basisStats: BasisStatsType, save_path: str) -> go.
 
 
 def method_error_bars_series(
-    atomToBasisStats: AtomBasisStatsType, bases:List[str], save_path: str, fname_suffix:str=''
+    atomToBasisStats: AtomBasisStatsType,
+    bases: List[str],
+    save_path: str,
+    fname_suffix: str = "",
 ) -> go.Figure:
     styler = Styler()
     styler.AXIS_TITLE_SIZE = 14
@@ -168,7 +172,7 @@ def method_error_bars_series(
         ),
     )
 
-    styler._save_fig(fig, save_path, "methods_bars_series"+fname_suffix)
+    styler._save_fig(fig, save_path, "methods_bars_series" + fname_suffix)
     return fig
 
 
@@ -488,18 +492,22 @@ def create_scatter_trace(
         showlegend=showlegend,
     )
 
-def calculate_r2(xs:List[Number], ys:List[Number]) -> float:
-    y_bar = np.mean(ys)
-    residual_squares = np.sum([(y-x)**2 for x, y in zip(xs, ys)])
-    total_squares = np.sum([(y-y_bar)**2 for y in ys])
-    return 1 - residual_squares/total_squares
 
-def calculate_statistics(xs:List[Number], ys:List[Number]) -> Tuple[float, float]:
-    rmsd = np.sqrt(np.mean([(y-x)**2 for x, y in zip(xs, ys)]))
-    mae = np.mean([abs(y-x) for x, y in zip(xs, ys)])
+def calculate_r2(xs: List[Number], ys: List[Number]) -> float:
+    y_bar = np.mean(ys)
+    residual_squares = np.sum([(y - x) ** 2 for x, y in zip(xs, ys)])
+    total_squares = np.sum([(y - y_bar) ** 2 for y in ys])
+    return 1 - residual_squares / total_squares
+
+
+def calculate_statistics(xs: List[Number], ys: List[Number]) -> Tuple[float, float]:
+    rmsd = np.sqrt(np.mean([(y - x) ** 2 for x, y in zip(xs, ys)]))
+    mae = np.mean([abs(y - x) for x, y in zip(xs, ys)])
     return rmsd, mae
 
-CORRELATE_COLORS = ['#03045e', '#00b4d8', '#f72585']
+
+CORRELATE_COLORS = ["#03045e", "#00b4d8", "#f72585"]
+
 
 def correlate_extrapolation_summary(
     atomToMolCBS: AtomMolDataType,
@@ -526,7 +534,7 @@ def correlate_extrapolation_summary(
     fig = make_subplots(
         rows=n_rows, cols=n_cols, subplot_titles=labels, vertical_spacing=0.12
     )
-        
+
     for j in range(n_rows * n_cols):
         xVals, yVals = [], []
         for atom in atoms:
@@ -535,22 +543,21 @@ def correlate_extrapolation_summary(
             for molecule, nameToCBS in atomToMolCBS[atom].items():
                 nameX = atomToNames[atom][j][0]
                 nameY = atomToNames[atom][j][1]
-                if molecule in figureSpecs.corrSmBasisException: 
+                if molecule in figureSpecs.corrSmBasisException:
                     # the problem is only with 3-21G basis set, which seems to be too small for
                     # K-edge excitations of some molecules
-                    # you can verify that this exception is unnecessary with DifD by adding 
+                    # you can verify that this exception is unnecessary with DifD by adding
                     # `and '3-21G' in nameX` to the if statement above`
                     continue
 
-                atomX.append(x := nameToCBS[nameX]['cbs+corr'])
-                atomY.append(y := nameToCBS[nameY]['cbs'])
+                atomX.append(x := nameToCBS[nameX]["cbs+corr"])
+                atomY.append(y := nameToCBS[nameY]["cbs"])
                 mols.append(molecule)
                 if x < xmin:
                     xmin = x
                     ymin = y
-            shifter = lambda x, ref: x - ref + 0.5
-            shiftedX = [shifter(x, xmin) for x in atomX]
-            shiftedY = [shifter(y, ymin) for y in atomY]
+            shiftedX = [x - xmin + 0.5 for x in atomX]
+            shiftedY = [y - ymin + 0.5 for y in atomY]
             xVals.extend(shiftedX)
             yVals.extend(shiftedY)
 
@@ -584,9 +591,14 @@ def correlate_extrapolation_summary(
             col=1 + j % 2,
         )
         r_sq = calculate_r2(xVals, yVals)
+
         # the below is really only about the placement of the R^2 text
-        fRsqx = lambda j: (j % 2) * 0.55 + 0.29
-        fRsqy = lambda j: -0.005 + 0.557 * (1 - j // 2)
+        def fRsqx(j: int) -> float:
+            return (j % 2) * 0.55 + 0.29
+
+        def fRsqy(j: int) -> float:
+            return -0.005 + 0.557 * (1 - j // 2)
+
         styler.add_r_equation(fig, r_sq, fRsqx(j), fRsqy(j))
 
     styler._update_axes(fig, xtitle="")
@@ -597,42 +609,90 @@ def correlate_extrapolation_summary(
     styler._update_fig(fig)
     fig.update_layout(width=600, height=570, margin=dict(l=20, r=20, t=30, b=0))
 
-    styler._save_fig(fig, save_path, f"correlate_summary" + suffix)
+    styler._save_fig(fig, save_path, "correlate_summary" + suffix)
     return fig
 
-def correlate_study(atomSchemeStats: AtomSchemeStatsType, dEffect:List[str], xtitle:str, ytitle:str, suffix:str, colors:List[str], save_path:str, axrange:List[Number]=[-1, 1]) -> go.Figure:
+
+def correlate_study(
+    atomSchemeStats: AtomSchemeStatsType,
+    dEffect: List[str],
+    xtitle: str,
+    ytitle: str,
+    suffix: str,
+    colors: List[str],
+    save_path: str,
+    axrange: List[Number] = [-1, 1],
+) -> go.Figure:
     styler = Styler()
     styler.TICK_SIZE = 12
     styler.AXIS_TITLE_SIZE = 16
     styler.ANNOTATION_SIZE = 8
-    fig = make_subplots(rows=2, cols=2, subplot_titles=[f"<b>{t}</b>" for t in ("C-Series", "N-Series", "O-Series", "F-Series")], vertical_spacing=0.08, shared_xaxes=True, shared_yaxes=True, horizontal_spacing=0.07)
-    atoms = 'c n o f'.split()
-
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=[
+            f"<b>{t}</b>" for t in ("C-Series", "N-Series", "O-Series", "F-Series")
+        ],
+        vertical_spacing=0.08,
+        shared_xaxes=True,
+        shared_yaxes=True,
+        horizontal_spacing=0.07,
+    )
+    atoms = "c n o f".split()
 
     for j, atom in enumerate(atoms):
         nameToErr = atomSchemeStats[atom]
-        a = nameToErr[dEffect[0]]['errors']
-        b = nameToErr[dEffect[1]]['errors']
-        
+        a = nameToErr[dEffect[0]]["errors"]
+        b = nameToErr[dEffect[1]]["errors"]
+
         ref = [min([min(a), min(b)]), max([max(a), max(b)])]
-        fig.add_trace(create_scatter_trace(ref, ref, 'lines', label='y=x', color=colors[3], showlegend=False, thick=2), row=1+j//2,col = 1+j%2)
-        fig.add_trace(create_scatter_trace(a, b, 'markers', label='bestdata', color=colors[1], markerBorW=1, markerSize=6, showlegend=False), row=1+j//2,col = 1+j%2)
-        
-    fig.update_layout(
-        margin=dict(l=10, r=20, t=30, b=0),
-        width=500, height=500
-    )
+        fig.add_trace(
+            create_scatter_trace(
+                ref,
+                ref,
+                "lines",
+                label="y=x",
+                color=colors[3],
+                showlegend=False,
+                thick=2,
+            ),
+            row=1 + j // 2,
+            col=1 + j % 2,
+        )
+        fig.add_trace(
+            create_scatter_trace(
+                a,
+                b,
+                "markers",
+                label="bestdata",
+                color=colors[1],
+                markerBorW=1,
+                markerSize=6,
+                showlegend=False,
+            ),
+            row=1 + j // 2,
+            col=1 + j % 2,
+        )
+
+    fig.update_layout(margin=dict(l=10, r=20, t=30, b=0), width=500, height=500)
     styler._update_fig(fig)
     styler._update_axes(fig, ytitle=ytitle, ydtick=0.3, xtitle=xtitle, xdtick=0.3)
     fig.update_yaxes(range=axrange, showgrid=False)
-    fig.update_xaxes(range=axrange, showgrid=False, gridcolor=styler.GREY, zeroline=True, zerolinecolor=styler.BLACK)
-    fig['layout']['xaxis1'].update(title='', showticklabels=False, tickvals=[])
-    fig['layout']['xaxis2'].update(title='', showticklabels=False, tickvals=[])
-    fig['layout']['yaxis2'].update(title='', tickvals=[])
-    fig['layout']['yaxis4'].update(title='', tickvals=[])
+    fig.update_xaxes(
+        range=axrange,
+        showgrid=False,
+        gridcolor=styler.GREY,
+        zeroline=True,
+        zerolinecolor=styler.BLACK,
+    )
+    fig["layout"]["xaxis1"].update(title="", showticklabels=False, tickvals=[])
+    fig["layout"]["xaxis2"].update(title="", showticklabels=False, tickvals=[])
+    fig["layout"]["yaxis2"].update(title="", tickvals=[])
+    fig["layout"]["yaxis4"].update(title="", tickvals=[])
 
-    styler._save_fig(fig, save_path, 'correlate'+suffix)
+    styler._save_fig(fig, save_path, "correlate" + suffix)
     return fig
+
 
 # def correlate_tstudy(tEffect, axrange=[-1, 1], interact=False, suffix='', extrapscale = None) -> go.Figure:
 #     self.TICK_SIZE = 12
@@ -672,7 +732,7 @@ def correlate_study(atomSchemeStats: AtomSchemeStatsType, dEffect:List[str], xti
 #         fig.add_trace(self.create_scatter_trace(a, b, 'markers', label='bestdata', color=extrapscale[1], markerBorW=1, markerSize=6, showlegend=False), row=1+j//2,col = 1+j%2)
 #         # fig.add_trace(self.create_scatter_trace(b, a, 'markers', label='bestdata', color=self.correlate[2], markerBorW=1, markerSize=8, showlegend=False), row=1+j//2,col = 1+j%2)
 #         # self.add_p_value(fig, self.number_in_scientific(o.pvalue, threshold=0, sigdigs=4), 0.01+0.55*(j%2), 0.40+0.55*(1-j//2))
-        
+
 #     fig.update_layout(
 #         margin=dict(l=10, r=20, t=30, b=0),
 #         width=500, height=500

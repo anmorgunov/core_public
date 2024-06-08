@@ -1,6 +1,6 @@
 BASIS_SET = {
-            'H': 
-                {'reg': """BASIS "ao basis" SPHERICAL PRINT
+    "H": {
+        "reg": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (5s,2p,1d) -> [5s,2p,1d]
 H    S
       3.387000E+01           1.00000000E+00
@@ -18,10 +18,11 @@ H    P
       3.880000E-01           1.00000000E+00
 H    D
       1.057000E+00           1.00000000E+00
-END""", 
-                 'core': """""", },
-            'C': 
-                {'reg': """BASIS "ao basis" SPHERICAL PRINT
+END""",
+        "core": """""",
+    },
+    "C": {
+        "reg": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (10s,5p,2d,1f) -> [10s,5p,2d,1f]
 C    S
       8.236000E+03           1.00000000E+00
@@ -59,10 +60,11 @@ C    D
       3.180000E-01           1.00000000E+00
 C    F
       7.610000E-01           1.00000000E+00
-END""", 
-                 'core': """""", },
-            'N': 
-                {'reg': """BASIS "ao basis" SPHERICAL PRINT
+END""",
+        "core": """""",
+    },
+    "N": {
+        "reg": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (10s,5p,2d,1f) -> [10s,5p,2d,1f]
 N    S
       1.142000E+04           1.00000000E+00
@@ -100,10 +102,11 @@ N    D
       4.690000E-01           1.00000000E+00
 N    F
       1.093000E+00           1.00000000E+00
-END""", 
-                 'core': """""", },
-            'O': 
-                {'reg': """BASIS "ao basis" SPHERICAL PRINT
+END""",
+        "core": """""",
+    },
+    "O": {
+        "reg": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (10s,5p,2d,1f) -> [10s,5p,2d,1f]
 O    S
       1.533000E+04           1.00000000E+00
@@ -141,10 +144,11 @@ O    D
       6.450000E-01           1.00000000E+00
 O    F
       1.428000E+00           1.00000000E+00
-END""", 
-                 'core': """""", },
-            'F': 
-                {'reg': """BASIS "ao basis" SPHERICAL PRINT
+END""",
+        "core": """""",
+    },
+    "F": {
+        "reg": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (10s,5p,2d,1f) -> [10s,5p,2d,1f]
 F    S
       1.950000E+04           1.00000000E+00
@@ -182,6 +186,7 @@ F    D
       8.550000E-01           1.00000000E+00
 F    F
       1.917000E+00           1.00000000E+00
-END""", 
-                 'core': """""", },
-            }
+END""",
+        "core": """""",
+    },
+}

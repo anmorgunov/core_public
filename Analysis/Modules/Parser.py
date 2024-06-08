@@ -1,9 +1,9 @@
-from openpyxl import load_workbook, Workbook
-from openpyxl.styles import Font
 import os
-import numpy as np
-from typing import List, Set, Union, Dict, Optional
+from typing import Dict, List, Optional, Set, Union
 
+import numpy as np
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font
 
 Number = Union[float, int]
 ExperDataType = Dict[str, Number]
@@ -59,7 +59,18 @@ class ParsedData:
     """
     This object takes an excel file with parsed data and updates it with new results. The advantage of this approach is that any custom comments left in column L in CEBE_Data file are preserved.
     """
-    specialBases = {'ccX-DZ', "ccX-TZ", "ccX-QZ", "ccX-5Z", "pcX-1", "pcX-2", "pcX-3", "pcX-4"}
+
+    specialBases = {
+        "ccX-DZ",
+        "ccX-TZ",
+        "ccX-QZ",
+        "ccX-5Z",
+        "pcX-1",
+        "pcX-2",
+        "pcX-3",
+        "pcX-4",
+    }
+
     def __init__(
         self,
         experimental_wb: str,
@@ -354,9 +365,10 @@ class ParsedData:
                                 continue
                             error = value - self.molToExper[molecule]
                             if error > 1 and bas in self.specialBases:
-                                if self.debug: print(
-                                    f"Large error for {algorithm} {atom} {molecule} {bas} {key}: {error}"
-                                )
+                                if self.debug:
+                                    print(
+                                        f"Large error for {algorithm} {atom} {molecule} {bas} {key}: {error}"
+                                    )
                             algoToError.setdefault(algorithm, {}).setdefault(
                                 atom, {}
                             ).setdefault(molecule, {}).setdefault(bas, {})[key] = error

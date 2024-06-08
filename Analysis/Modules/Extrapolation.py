@@ -1,8 +1,9 @@
-import plotly.graph_objects as go
-import scipy.optimize
+from typing import Dict, Iterable, List, Optional, Tuple, Union
+
 import numpy as np
-from .Parser import AlgoDataType, BasisDataType, ExperDataType
-from typing import List, Tuple, Union, Dict, Optional, Iterable
+import scipy.optimize
+
+from .Parser import BasisDataType, ExperDataType
 
 Number = Union[float, int]
 SchemeStatsType = Dict[str, Dict[str, Number]]
@@ -13,6 +14,7 @@ AlgoAtomStatsType = Dict[str, AtomSchemeStatsType]
 SchemeResultType = Dict[str, Optional[Number]]
 AtomMolDataType = Dict[str, Dict[str, SchemeResultType]]
 AlgoDataType = Dict[str, AtomMolDataType]
+
 
 def rounder(dig):
     def rounder_to_dig(float):
@@ -77,7 +79,20 @@ def extrapolate_molecule_given_scheme(
     if method == "HF":
         method = "UHF"
 
-    basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5, "pcX-1": 2, "pcX-2": 3, "pcX-3": 4, "pcX-4": 5, "ccX-DZ": 2, "ccX-TZ": 3, "ccX-QZ": 4, "ccX-5Z": 5}
+    basToCoeff = {
+        "D": 2,
+        "T": 3,
+        "Q": 4,
+        "5": 5,
+        "pcX-1": 2,
+        "pcX-2": 3,
+        "pcX-3": 4,
+        "pcX-4": 5,
+        "ccX-DZ": 2,
+        "ccX-TZ": 3,
+        "ccX-QZ": 4,
+        "ccX-5Z": 5,
+    }
     if len(bases) == 1:
         assert (
             corrBasis is not None
@@ -120,7 +135,7 @@ class WholeDataset:
         """
         Initialization
         """
-        self.algoToCBS:AlgoDataType = {}
+        self.algoToCBS: AlgoDataType = {}
         self.smallBasisException = {}
         self.debug = False
 
@@ -129,13 +144,11 @@ class WholeDataset:
             for atom, molData in atomData.items():
                 for mol, basisData in molData.items():
                     for scheme in schemes:
-                        result = extrapolate_molecule_given_scheme(
-                            basisData, scheme
-                        )
+                        result = extrapolate_molecule_given_scheme(basisData, scheme)
                         if result is None:
-                            self.smallBasisException.setdefault(algorithm, {}).setdefault(
-                                atom, {}
-                            )[mol] = scheme
+                            self.smallBasisException.setdefault(
+                                algorithm, {}
+                            ).setdefault(atom, {})[mol] = scheme
                         else:
                             self.algoToCBS.setdefault(algorithm, {}).setdefault(
                                 atom, {}
@@ -170,7 +183,7 @@ class WholeDataset:
                             atom, {}
                         ).setdefault(scheme, []).append(error)
 
-        algoToAtomStats:AlgoAtomStatsType = {}
+        algoToAtomStats: AlgoAtomStatsType = {}
         for algorithm, atomData in algoToAtomErrors.items():
             for atom, schemeData in atomData.items():
                 for scheme, errors_list in schemeData.items():
@@ -200,8 +213,8 @@ class WholeDataset:
                         algoToErrors.setdefault(algorithm, {}).setdefault(
                             scheme, []
                         ).append(error)
-        
-        algoToStats:AlgoStatsType = {}
+
+        algoToStats: AlgoStatsType = {}
         for algorithm, schemeData in algoToErrors.items():
             for scheme, errors in schemeData.items():
                 errors = np.array(errors)
@@ -224,8 +237,10 @@ class WholeDataset:
         for bases in "D-T T-Q D-T-Q".split():
             for method in "CCSD CCSD(T)".split():
                 ccsd_schemes.append(f"{bases}-{method}")
-        
-        bases_combs = "pcX-1 pcX-2 | pcX-2 pcX-3 | pcX-1 pcX-2 pcX-3 | ccX-DZ ccX-TZ | ccX-TZ ccX-QZ | ccX-DZ ccX-TZ ccX-QZ".split(" | ")
+
+        bases_combs = "pcX-1 pcX-2 | pcX-2 pcX-3 | pcX-1 pcX-2 pcX-3 | ccX-DZ ccX-TZ | ccX-TZ ccX-QZ | ccX-DZ ccX-TZ ccX-QZ".split(
+            " | "
+        )
         for bases in bases_combs:
             for method in "CCSD CCSD(T)".split():
                 ccsd_schemes.append(f"{method}[{bases}]")
@@ -265,17 +280,18 @@ class WholeDataset:
 
         self._schemeIterKeys = ["HF", "CCSD", "MP2", "MP2_EXT"]
 
-    
-    def scheme_generator(self)->Iterable[str]:
-        assert hasattr(self, "schemeDict"), "You need to call _create_extrapolation_schemes first"
+    def scheme_generator(self) -> Iterable[str]:
+        assert hasattr(
+            self, "schemeDict"
+        ), "You need to call _create_extrapolation_schemes first"
         for key in self._schemeIterKeys:
             schemes = self.schemeDict[key]
             for scheme in schemes:
                 yield scheme
-    
+
     @property
     def schemes(self):
-        print('call schemes')
+        print("call schemes")
         return self.scheme_generator()
 
 

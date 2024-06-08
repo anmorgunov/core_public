@@ -203,4 +203,4 @@ corrSmBasisException = {
     "c-o",
     "ch3cof",
     "hco-n-hch3",
-} # molecules with convergence issues in 3-21G basis
+}  # molecules with convergence issues in 3-21G basis

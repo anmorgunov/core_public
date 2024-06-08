@@ -1,16 +1,17 @@
-from .Modules import LaTeX, Extrapolation, Parser
+import os
+from typing import Callable, Dict, Iterable, List, Set
+
+from openpyxl import load_workbook
+
+from . import constants
+from .Modules import LaTeX
+from .Modules.Extrapolation import AtomSchemeStatsType, SchemeStatsType
 from .Modules.Parser import (
-    ExperDataType,
+    AtomBasisStatsType,
     AtomDataType,
     BasisStatsType,
-    AtomBasisStatsType,
+    ExperDataType,
 )
-from .Modules.Extrapolation import SchemeStatsType, AtomSchemeStatsType
-from typing import Dict, Set, List, Iterable, Callable
-import os
-from openpyxl import load_workbook
-from . import constants
-
 
 
 class SingleZetaResults:
@@ -120,7 +121,9 @@ class MethodSummary:
         self.isPublication = isPublication
 
     def create_table_body(self, statsContainer: BasisStatsType, bases: List[str]):
-        _me = lambda x: f"$\Delta${x}" if x != "UHF" else f"$\Delta$HF"
+        def _me(x: str) -> str:
+            return f"$\Delta${x}" if x != "UHF" else "$\Delta$HF"
+
         body = []
         nSet = set()
         f = self.f  # f stands for formatter
@@ -175,12 +178,12 @@ class MethodSummary:
             suffix = f" ({nSet.pop()} molecules)"
         header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
         caption = (
-            f"Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points"
+            "Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points"
             + suffix
         )
         LaTeX.Table.export_table(
             caption=caption,
-            label=f"method-all-summary",
+            label="method-all-summary",
             positioning="l " * len(header),
             headers=header,
             body=body,
@@ -191,7 +194,9 @@ class MethodSummary:
         atoms = self.atomToBasisStats.keys()
         for atom in atoms:
             # bases = self.atomToBasisStats[atom].keys()
-            bases = "D ccX-DZ pcX-1 T ccX-TZ pcX-2 Q ccX-QZ pcX-3 5 ccX-5Z pcX-4".split()
+            bases = (
+                "D ccX-DZ pcX-1 T ccX-TZ pcX-2 Q ccX-QZ pcX-3 5 ccX-5Z pcX-4".split()
+            )
             path = os.path.join(self.save_folder, f"{atom}-summary")
             self.series_table(atom.lower(), bases, path)
 
@@ -268,12 +273,12 @@ class ExtrapSchemeSummary:
             suffix = f" ({nSet.pop()} molecules)"
         header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
         caption = (
-            f"Statistical analysis of accuracy of different extrapolation schemes at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points"
+            "Statistical analysis of accuracy of different extrapolation schemes at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points"
             + suffix
         )
         LaTeX.Table.export_table(
             caption=caption,
-            label=f"extrap-all-summary",
+            label="extrap-all-summary",
             positioning="l " * len(header),
             headers=header,
             body=body,
@@ -290,7 +295,7 @@ class ExtrapSchemeSummary:
 
 class UsedGeometries:
 
-    def __init__(self, geom_wb:str, save_folder:str):
+    def __init__(self, geom_wb: str, save_folder: str):
         self.geom_wb = load_workbook(geom_wb)
         self.save_folder = save_folder
 
@@ -300,79 +305,89 @@ class UsedGeometries:
     def _render_mol(self, mol: str):
         return constants.FNAME_TO_MOLS[mol]["latex"]
 
-    def parse_geometries(self, relevantMols:Dict[str, Set[str]]):
+    def parse_geometries(self, relevantMols: Dict[str, Set[str]]):
         methodToAtomToMols = {}
         methodToBasisToMols = {}
-        ws = self.geom_wb['Sheet1']
+        ws = self.geom_wb["Sheet1"]
         row = 2
         while True:
-            if ws['B'+str(row)].value is None and ws['B'+str(row+1)].value is None:
+            if (
+                ws["B" + str(row)].value is None
+                and ws["B" + str(row + 1)].value is None
+            ):
                 break
-            if ws['B'+str(row)].value is None: 
+            if ws["B" + str(row)].value is None:
                 row += 1
                 continue
-            atom = ws['B'+str(row)].value
+            atom = ws["B" + str(row)].value
             if atom not in relevantMols.keys():
                 row += 1
                 continue
-            molecule = ws['C'+str(row)].value
-            if molecule not in relevantMols[atom]: 
+            molecule = ws["C" + str(row)].value
+            if molecule not in relevantMols[atom]:
                 row += 1
                 continue
-            method = ws['D'+str(row)].value
-            basis = ws['E'+str(row)].value if ws['E'+str(row)].value is not None else 'exp'
-            methodToAtomToMols.setdefault(method, {}).setdefault(atom, {}).setdefault(basis, []).append(molecule)
-            methodToBasisToMols.setdefault(method, {}).setdefault(basis, set()).add(self._get_formula(molecule))
+            method = ws["D" + str(row)].value
+            basis = (
+                ws["E" + str(row)].value
+                if ws["E" + str(row)].value is not None
+                else "exp"
+            )
+            methodToAtomToMols.setdefault(method, {}).setdefault(atom, {}).setdefault(
+                basis, []
+            ).append(molecule)
+            methodToBasisToMols.setdefault(method, {}).setdefault(basis, set()).add(
+                self._get_formula(molecule)
+            )
             row += 1
         self.methodToAtomToBasisToMols = methodToAtomToMols
         self.methodToBasisToMols = methodToBasisToMols
 
-    def summary(self, save_path:str):
-        mols = list(sorted(self.methodToBasisToMols['exp']['exp']))
-        self.methodToBasisToMols.setdefault('exp1', {})['exp1'] = mols[:len(mols)//2]
-        self.methodToBasisToMols.setdefault('exp2', {})['exp2'] = mols[len(mols)//2:]
-        caption = f'Molecules for which experimental geometries were available'
-        header = ['exp1', 'exp2', 'MP2(Full)', 'RI-MP2']
-        positioning = 'p{0.30\linewidth} | p{0.30\linewidth} | p{0.30\linewidth} | p{0.30\linewidth}'
+    def summary(self, save_path: str):
+        mols = list(sorted(self.methodToBasisToMols["exp"]["exp"]))
+        self.methodToBasisToMols.setdefault("exp1", {})["exp1"] = mols[: len(mols) // 2]
+        self.methodToBasisToMols.setdefault("exp2", {})["exp2"] = mols[len(mols) // 2 :]
+        caption = "Molecules for which experimental geometries were available"
+        header = ["exp1", "exp2", "MP2(Full)", "RI-MP2"]
+        positioning = "p{0.30\linewidth} | p{0.30\linewidth} | p{0.30\linewidth} | p{0.30\linewidth}"
         body = []
-        for j, method in enumerate(header):   
-            i = 0     
+        for j, method in enumerate(header):
+            i = 0
             for basis in self.methodToBasisToMols[method]:
-                if basis not in {'exp', 'exp1', 'exp2'}:
+                if basis not in {"exp", "exp1", "exp2"}:
                     if i >= len(body):
                         body.append([])
                     body[i].append("\\textit{%s}" % basis)
-                    i+=1
+                    i += 1
                 for molecule in sorted(self.methodToBasisToMols[method][basis]):
                     cell = "\ch{%s}" % molecule
                     if i >= len(body):
                         body.append([])
                     body[i].append(cell)
-                    i+=1
-        
+                    i += 1
+
                 cell = "(%s molecules)" % len(self.methodToBasisToMols[method][basis])
                 if i >= len(body):
                     body.append([])
                 body[i].append(cell)
-                i+=1
+                i += 1
 
             if j > 0:
                 if i < len(body):
                     while i < len(body):
-                        body[i].append(' ')
+                        body[i].append(" ")
                         i += 1
 
         LaTeX.Table.export_table(
             caption=caption,
-            label='geom-summary',
+            label="geom-summary",
             positioning=positioning,
             headers=header,
             body=body,
             name=save_path,
         )
 
-
-    def main(self, relevantMols:Dict[str, Set[str]]):
+    def main(self, relevantMols: Dict[str, Set[str]]):
         self.parse_geometries(relevantMols)
         path = os.path.join(self.save_folder, "geom-summary")
         self.summary(path)

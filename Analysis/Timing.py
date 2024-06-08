@@ -1,8 +1,9 @@
 import os
 from datetime import datetime
-from typing import Set, Dict
-import numpy as np
 from pathlib import Path
+from typing import Dict, Set
+
+import numpy as np
 
 MethodTimeType = Dict[str, float]
 BasisTimeType = Dict[str, MethodTimeType]
@@ -72,7 +73,7 @@ class Timer:
             "UCCSD(T)": "UCCSD",
             "U-MP3": "U-MP2",
             "U-CCSD(T)": "U-CCSD",
-        } # timestamp for completion of MP3 combines MP2 and MP3
+        }  # timestamp for completion of MP3 combines MP2 and MP3
         newToOld = {
             "UMP2": "U-MP2",
             "UMP3": "U-MP3",
@@ -87,10 +88,10 @@ class Timer:
         }
         extra_bases = "pcX-1 pcX-2 pcX-3 ccX-DZ ccX-TZ ccX-QZ".split()
         for basis in extra_bases:
-            basToMethods[basis] = basToMethods['Q']
+            basToMethods[basis] = basToMethods["Q"]
         extra_pen = "pcX-4 ccX-5Z".split()
         for basis in extra_pen:
-            basToMethods[basis] = basToMethods['5']
+            basToMethods[basis] = basToMethods["5"]
         bases = "D T Q 5".split() + extra_bases + extra_pen
         bases = "D pcX-1 ccX-DZ T pcX-2 ccX-TZ Q pcX-3 ccX-QZ 5 pcX-4 ccX-5Z".split()
         for basis in bases:
