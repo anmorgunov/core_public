@@ -59,7 +59,7 @@ class ParsedData:
     """
     This object takes an excel file with parsed data and updates it with new results. The advantage of this approach is that any custom comments left in column L in CEBE_Data file are preserved.
     """
-
+    specialBases = {'ccX-DZ', "ccX-TZ", "ccX-QZ", "ccX-5Z", "pcX-1", "pcX-2", "pcX-3", "pcX-4"}
     def __init__(
         self,
         experimental_wb: str,
@@ -150,9 +150,16 @@ class ParsedData:
                             print(f"{files=}")
 
                         # Case 1. Calculation was unsuccesful and did not terminate normally
-                        if f"CEBE_{algorithm}.txt" not in files:
+                        if algorithm == "gracemom":
+                            suffix = "mom"
+                        else:
+                            suffix = "mom"
+                        if f"CEBE_{suffix}.txt" not in files:
                             basisToData["error"] = "No CEBE file"
                             err = os.path.join(basPath, "sbatch.err")
+                            if "sbatch.err" not in files:
+                                basisToData["detailed"] = "empty?"
+                                continue
                             errFile = open(err, "r").readlines()
                             if errFile:
                                 basisToData["detailed"] = errFile[-1].split("\n")[0]
@@ -160,7 +167,7 @@ class ParsedData:
                                 basisToData["detailed"] = "empty?"
                         # Case 2. Calculation terminated normally
                         else:
-                            result = os.path.join(basPath, f"CEBE_{algorithm}.txt")
+                            result = os.path.join(basPath, f"CEBE_{suffix}.txt")
                             lines = open(result, "r").readlines()
                             for rline in lines:
                                 line = rline.split("\n")[0]
@@ -310,6 +317,8 @@ class ParsedData:
         filtered_algoToData = {}
         for algorithm, atomData in algoToData.items():
             for atom, molData in atomData.items():
+                if atom not in atomToMols:
+                    continue
                 for molecule, basData in molData.items():
                     if molecule in atomToMols[atom]:
                         filtered_algoToData.setdefault(algorithm, {}).setdefault(
@@ -343,11 +352,14 @@ class ParsedData:
                         for key, value in methodData.items():
                             if key not in valid_keys:
                                 continue
+                            error = value - self.molToExper[molecule]
+                            if error > 1 and bas in self.specialBases:
+                                if self.debug: print(
+                                    f"Large error for {algorithm} {atom} {molecule} {bas} {key}: {error}"
+                                )
                             algoToError.setdefault(algorithm, {}).setdefault(
                                 atom, {}
-                            ).setdefault(molecule, {}).setdefault(bas, {})[key] = (
-                                value - self.molToExper[molecule]
-                            )
+                            ).setdefault(molecule, {}).setdefault(bas, {})[key] = error
         self.algoToError = algoToError
 
     def calculate_series_statistics(self):
@@ -361,7 +373,7 @@ class ParsedData:
                             algoToAtomErrors.setdefault(algorithm, {}).setdefault(
                                 atom, {}
                             ).setdefault(bas, {}).setdefault(method, []).append(value)
-        algoToAtomStats:AlgoAtomStatsType = {}
+        algoToAtomStats: AlgoAtomStatsType = {}
         for algorithm, atomData in algoToAtomErrors.items():
             for atom, basData in atomData.items():
                 for bas, methodData in basData.items():
@@ -391,13 +403,15 @@ class ParsedData:
                             algoToErrors.setdefault(algorithm, {}).setdefault(
                                 bas, {}
                             ).setdefault(method, []).append(value)
-        algoToStats:AlgoStatsType = {}
+        algoToStats: AlgoStatsType = {}
         for algorithm, basData in algoToErrors.items():
             for bas, methodData in basData.items():
                 for method, error_list in methodData.items():
                     errors = np.array(error_list)
                     abs_errs = np.abs(errors)
-                    algoToStats.setdefault(algorithm, {}).setdefault(bas, {})[method] = {
+                    algoToStats.setdefault(algorithm, {}).setdefault(bas, {})[
+                        method
+                    ] = {
                         "MSE": np.mean(errors),
                         "MAE": np.mean(abs_errs),
                         "MedAE": np.median(abs_errs),

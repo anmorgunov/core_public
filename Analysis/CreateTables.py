@@ -89,7 +89,7 @@ class SingleZetaResults:
         )
 
     def all_results(self, save_folder: str):
-        for atom in "C N O F".split():
+        for atom in self.atomToData.keys():
             for basis in "D T Q 5".split():
                 path = os.path.join(save_folder, f"{atom}-{basis}Z")
                 self.series_table(atom.lower(), basis, path)
@@ -98,8 +98,8 @@ class SingleZetaResults:
 class MethodSummary:
     col_names = ["Basis", "Method", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
     basisToMethods = {
-        "D": "UHF MP2 MP2.5 MP3 CCSD CCSD(T)".split(),
-        "T": "UHF MP2 MP2.5 MP3 CCSD CCSD(T)".split(),
+        "D": "UHF MP2 CCSD CCSD(T)".split(),
+        "T": "UHF MP2 CCSD CCSD(T)".split(),
         "Q": "UHF MP2 CCSD CCSD(T)".split(),
         "5": "UHF MP2".split(),
     }
@@ -144,12 +144,13 @@ class MethodSummary:
         body, nSet = self.create_table_body(self.atomToBasisStats[atom], bases)
 
         if self.show_sample_size:
-            self.col_names.append("Sample Size")
+            col_names = self.col_names + ["Sample Size"]
             suffix = ""
         else:
+            col_names = self.col_names
             assert len(nSet) == 1, "Sample size must be the same for all methods"
             suffix = f" ({nSet.pop()} molecules)"
-        header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
+        header = ["\\textbf{%s}" % col_name for col_name in col_names]
         caption = (
             f"Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom.upper()}-series"
             + suffix
@@ -187,9 +188,10 @@ class MethodSummary:
         )
 
     def all_results(self):
-        atoms = "C N O F".split()
-        bases = "D T Q 5".split()
+        atoms = self.atomToBasisStats.keys()
         for atom in atoms:
+            # bases = self.atomToBasisStats[atom].keys()
+            bases = "D ccX-DZ pcX-1 T ccX-TZ pcX-2 Q ccX-QZ pcX-3 5 ccX-5Z pcX-4".split()
             path = os.path.join(self.save_folder, f"{atom}-summary")
             self.series_table(atom.lower(), bases, path)
 
@@ -235,12 +237,13 @@ class ExtrapSchemeSummary:
         body, nSet = self.create_table_body(self.atomToSchemeStats[atom], schemes)
 
         if self.show_sample_size:
-            self.col_names.append("Sample Size")
+            col_names = self.col_names + ["Sample Size"]
             suffix = ""
         else:
+            col_names = self.col_names
             assert len(nSet) == 1, "Sample size must be the same for all methods"
             suffix = f" ({nSet.pop()} molecules)"
-        header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
+        header = ["\\textbf{%s}" % col_name for col_name in col_names]
         caption = (
             f"Statistical analysis of accuracy of different extrapolation schemes at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom.upper()}-series"
             + suffix

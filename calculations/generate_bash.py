@@ -153,7 +153,7 @@ do
     mkdir -p $out_path
     cd $out_path
     
-    for mol in "${{mols[@]}}"
+    for mol in $mols
     do
         mkdir -p $mol 
         cd $mol

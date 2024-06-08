@@ -1,28 +1,58 @@
 \begin{table}
-  \caption{\textbf{Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points (94 molecules)}}
+  \caption{\textbf{Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points}}
   \label{tbl:method-all-summary}
-  \begin{tabular}{l l l l l l l }
-    \hline
-    \textbf{Basis} & \textbf{Method} & \textbf{MSE} & \textbf{MAE} & \textbf{MedAE} & \textbf{MaxAE} & \textbf{STD} \\ 
-    \hline
-    D & $\Delta$HF & 0.31 & 0.41 & 0.35 & 2.57 & 0.37 \\ 
-    D & $\Delta$MP2 & 1.81 & 1.81 & 1.75 & 2.76 & 0.34 \\ 
-    D & $\Delta$MP2.5 & 1.78 & 1.78 & 1.75 & 2.67 & 0.30 \\ 
-    D & $\Delta$MP3 & 1.75 & 1.75 & 1.76 & 2.59 & 0.28 \\ 
-    D & $\Delta$CCSD & 1.64 & 1.64 & 1.68 & 2.31 & 0.26 \\ 
-    D & $\Delta$CCSD(T) & 1.66 & 1.66 & 1.69 & 2.27 & 0.27 \\ 
-    T & $\Delta$HF & -0.77 & 0.84 & 0.80 & 2.12 & 0.46 \\ 
-    T & $\Delta$MP2 & 0.36 & 0.38 & 0.29 & 1.52 & 0.32 \\ 
-    T & $\Delta$MP2.5 & 0.34 & 0.37 & 0.28 & 1.43 & 0.29 \\ 
-    T & $\Delta$MP3 & 0.33 & 0.36 & 0.30 & 1.34 & 0.27 \\ 
-    T & $\Delta$CCSD & 0.20 & 0.24 & 0.24 & 0.73 & 0.14 \\ 
-    T & $\Delta$CCSD(T) & 0.23 & 0.26 & 0.27 & 0.63 & 0.13 \\ 
-    Q & $\Delta$HF & -0.85 & 0.91 & 0.86 & 2.29 & 0.49 \\ 
-    Q & $\Delta$MP2 & 0.29 & 0.32 & 0.23 & 1.50 & 0.32 \\ 
-    Q & $\Delta$CCSD & 0.12 & 0.20 & 0.18 & 0.72 & 0.14 \\ 
-    Q & $\Delta$CCSD(T) & 0.16 & 0.20 & 0.20 & 0.51 & 0.12 \\ 
-    5 & $\Delta$HF & -0.86 & 0.92 & 0.86 & 2.33 & 0.49 \\ 
-    5 & $\Delta$MP2 & 0.29 & 0.32 & 0.22 & 1.52 & 0.33 \\ 
-    \hline
+  \begin{tabular}{l l l l l l l l }
+    \toprule
+    \textbf{Basis} & \textbf{Method} & \textbf{MSE} & \textbf{MAE} & \textbf{MedAE} & \textbf{MaxAE} & \textbf{STD} & \textbf{Sample Size} \\ 
+    \midrule
+    D & $\Delta$HF & 0.30 & 0.42 & 0.36 & 2.57 & 0.36 & 83 \\ 
+    D & $\Delta$MP2 & 1.79 & 1.79 & 1.75 & 2.50 & 0.33 & 83 \\ 
+    D & $\Delta$MP3 & 1.74 & 1.74 & 1.73 & 2.30 & 0.26 & 83 \\ 
+    D & $\Delta$CCSD & 1.64 & 1.64 & 1.68 & 2.17 & 0.26 & 83 \\ 
+    D & $\Delta$CCSD(T) & 1.66 & 1.66 & 1.70 & 2.25 & 0.27 & 83 \\ 
+    D & $\Delta$MP2.5 & 1.76 & 1.76 & 1.73 & 2.36 & 0.29 & 83 \\ 
+    ccX-DZ & $\Delta$HF & -0.81 & 0.90 & 0.81 & 2.30 & 0.50 & 83 \\ 
+    ccX-DZ & $\Delta$MP2 & 0.36 & 0.39 & 0.34 & 1.40 & 0.32 & 83 \\ 
+    ccX-DZ & $\Delta$CCSD & 0.27 & 0.32 & 0.32 & 0.79 & 0.18 & 83 \\ 
+    ccX-DZ & $\Delta$CCSD(T) & 0.29 & 0.33 & 0.35 & 0.77 & 0.17 & 83 \\ 
+    pcX-1 & $\Delta$HF & -0.47 & 0.93 & 0.66 & 14.61 & 1.57 & 83 \\ 
+    pcX-1 & $\Delta$MP2 & 0.44 & 0.48 & 0.23 & 15.88 & 1.72 & 83 \\ 
+    pcX-1 & $\Delta$CCSD & 0.37 & 0.41 & 0.19 & 15.90 & 1.72 & 83 \\ 
+    pcX-1 & $\Delta$CCSD(T) & 0.37 & 0.41 & 0.20 & 15.90 & 1.72 & 83 \\ 
+    T & $\Delta$HF & -0.77 & 0.85 & 0.75 & 2.12 & 0.47 & 83 \\ 
+    T & $\Delta$MP2 & 0.33 & 0.36 & 0.28 & 1.30 & 0.29 & 83 \\ 
+    T & $\Delta$MP3 & 0.32 & 0.35 & 0.30 & 1.06 & 0.25 & 83 \\ 
+    T & $\Delta$CCSD & 0.20 & 0.25 & 0.25 & 0.73 & 0.14 & 83 \\ 
+    T & $\Delta$CCSD(T) & 0.23 & 0.26 & 0.27 & 0.63 & 0.13 & 83 \\ 
+    T & $\Delta$MP2.5 & 0.33 & 0.35 & 0.28 & 1.13 & 0.26 & 83 \\ 
+    ccX-TZ & $\Delta$HF & -0.77 & 1.02 & 0.86 & 7.41 & 0.87 & 83 \\ 
+    ccX-TZ & $\Delta$MP2 & 0.39 & 0.42 & 0.24 & 7.64 & 0.85 & 83 \\ 
+    ccX-TZ & $\Delta$CCSD & 0.25 & 0.32 & 0.24 & 7.77 & 0.83 & 83 \\ 
+    ccX-TZ & $\Delta$CCSD(T) & 0.28 & 0.33 & 0.24 & 7.72 & 0.83 & 83 \\ 
+    pcX-2 & $\Delta$HF & -0.84 & 0.91 & 0.81 & 2.31 & 0.50 & 83 \\ 
+    pcX-2 & $\Delta$MP2 & 0.21 & 0.26 & 0.18 & 1.13 & 0.25 & 83 \\ 
+    pcX-2 & $\Delta$CCSD & 0.08 & 0.16 & 0.14 & 0.60 & 0.13 & 83 \\ 
+    pcX-2 & $\Delta$CCSD(T) & 0.11 & 0.17 & 0.15 & 0.57 & 0.12 & 83 \\ 
+    Q & $\Delta$HF & -0.85 & 0.92 & 0.82 & 2.29 & 0.50 & 83 \\ 
+    Q & $\Delta$MP2 & 0.27 & 0.30 & 0.22 & 1.26 & 0.29 & 83 \\ 
+    Q & $\Delta$CCSD & 0.12 & 0.20 & 0.18 & 0.72 & 0.14 & 83 \\ 
+    Q & $\Delta$CCSD(T) & 0.16 & 0.21 & 0.20 & 0.51 & 0.12 & 83 \\ 
+    Q & $\Delta$MP3 & 0.16 & 0.20 & 0.12 & 0.91 & 0.26 & 9 \\ 
+    Q & $\Delta$MP2.5 & 0.21 & 0.23 & 0.12 & 1.07 & 0.31 & 9 \\ 
+    ccX-QZ & $\Delta$HF & -0.87 & 0.93 & 0.83 & 2.33 & 0.51 & 83 \\ 
+    ccX-QZ & $\Delta$MP2 & 0.28 & 0.31 & 0.23 & 1.28 & 0.29 & 83 \\ 
+    ccX-QZ & $\Delta$CCSD & 0.13 & 0.21 & 0.19 & 0.73 & 0.14 & 82 \\ 
+    ccX-QZ & $\Delta$CCSD(T) & 0.16 & 0.21 & 0.22 & 0.51 & 0.12 & 82 \\ 
+    pcX-3 & $\Delta$HF & -0.86 & 0.93 & 0.83 & 2.33 & 0.51 & 82 \\ 
+    pcX-3 & $\Delta$MP2 & 0.19 & 0.25 & 0.16 & 1.17 & 0.27 & 82 \\ 
+    pcX-3 & $\Delta$CCSD & 0.05 & 0.16 & 0.14 & 0.67 & 0.13 & 82 \\ 
+    pcX-3 & $\Delta$CCSD(T) & 0.08 & 0.16 & 0.13 & 0.56 & 0.11 & 82 \\ 
+    5 & $\Delta$HF & -0.87 & 0.93 & 0.83 & 2.33 & 0.51 & 83 \\ 
+    5 & $\Delta$MP2 & 0.26 & 0.30 & 0.21 & 1.28 & 0.29 & 83 \\ 
+    ccX-5Z & $\Delta$HF & -0.70 & 1.08 & 0.83 & 13.06 & 1.42 & 83 \\ 
+    ccX-5Z & $\Delta$MP2 & 0.41 & 0.45 & 0.22 & 12.85 & 1.40 & 83 \\ 
+    pcX-4 & $\Delta$HF & -0.63 & 1.13 & 0.83 & 10.94 & 1.37 & 83 \\ 
+    pcX-4 & $\Delta$MP2 & 0.43 & 0.48 & 0.18 & 11.89 & 1.50 & 83 \\ 
+    \bottomrule
   \end{tabular}
 \end{table}
