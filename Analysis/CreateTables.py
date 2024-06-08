@@ -98,8 +98,8 @@ class SingleZetaResults:
 class MethodSummary:
     col_names = ["Basis", "Method", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
     basisToMethods = {
-        "D": "UHF MP2 MP2.5 MP3 CCSD CCSD(T)".split(),
-        "T": "UHF MP2 MP2.5 MP3 CCSD CCSD(T)".split(),
+        "D": "UHF MP2 CCSD CCSD(T)".split(),
+        "T": "UHF MP2 CCSD CCSD(T)".split(),
         "Q": "UHF MP2 CCSD CCSD(T)".split(),
         "5": "UHF MP2".split(),
     }
@@ -144,12 +144,13 @@ class MethodSummary:
         body, nSet = self.create_table_body(self.atomToBasisStats[atom], bases)
 
         if self.show_sample_size:
-            self.col_names.append("Sample Size")
+            col_names = self.col_names + ["Sample Size"]
             suffix = ""
         else:
+            col_names = self.col_names
             assert len(nSet) == 1, "Sample size must be the same for all methods"
             suffix = f" ({nSet.pop()} molecules)"
-        header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
+        header = ["\\textbf{%s}" % col_name for col_name in col_names]
         caption = (
             f"Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom.upper()}-series"
             + suffix
@@ -236,12 +237,13 @@ class ExtrapSchemeSummary:
         body, nSet = self.create_table_body(self.atomToSchemeStats[atom], schemes)
 
         if self.show_sample_size:
-            self.col_names.append("Sample Size")
+            col_names = self.col_names + ["Sample Size"]
             suffix = ""
         else:
+            col_names = self.col_names
             assert len(nSet) == 1, "Sample size must be the same for all methods"
             suffix = f" ({nSet.pop()} molecules)"
-        header = ["\\textbf{%s}" % col_name for col_name in self.col_names]
+        header = ["\\textbf{%s}" % col_name for col_name in col_names]
         caption = (
             f"Statistical analysis of accuracy of different extrapolation schemes at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom.upper()}-series"
             + suffix

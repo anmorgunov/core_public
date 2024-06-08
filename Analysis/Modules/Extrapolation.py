@@ -77,7 +77,7 @@ def extrapolate_molecule_given_scheme(
     if method == "HF":
         method = "UHF"
 
-    basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5}
+    basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5, "pcX-1": 2, "pcX-2": 3, "pcX-3": 4, "pcX-4": 5, "ccX-DZ": 2, "ccX-TZ": 3, "ccX-QZ": 4, "ccX-5Z": 5}
     if len(bases) == 1:
         assert (
             corrBasis is not None
@@ -224,6 +224,11 @@ class WholeDataset:
         for bases in "D-T T-Q D-T-Q".split():
             for method in "CCSD CCSD(T)".split():
                 ccsd_schemes.append(f"{bases}-{method}")
+        
+        bases_combs = "pcX-1 pcX-2 | pcX-2 pcX-3 | pcX-1 pcX-2 pcX-3 | ccX-DZ ccX-TZ | ccX-TZ ccX-QZ | ccX-DZ ccX-TZ ccX-QZ".split(" | ")
+        for bases in bases_combs:
+            for method in "CCSD CCSD(T)".split():
+                ccsd_schemes.append(f"{method}[{bases}]")
         if self.debug:
             print(f"{ccsd_schemes=}")
 
@@ -282,4 +287,6 @@ if __name__ == "__main__":
         "F": "T-Q-CCSD(T), MP2(Q)+DifD".split(", "),
     }
 
-    obj = WholeDataset()
+    # obj = WholeDataset()
+    o = parse_scheme("CCSD[pcX-1 pcX-2]")
+    print(f"{o=}")

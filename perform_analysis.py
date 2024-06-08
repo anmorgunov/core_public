@@ -21,17 +21,19 @@ from pathlib import Path
 
 BASE_PATH = Path(__file__).resolve().parent
 DATA_PATH = BASE_PATH / "Data"
+CALCS_FOLDER = BASE_PATH / "calculations"
 
 # --------------- PERFORM PARSING ---------------
 experimental_wb = os.path.join(DATA_PATH, "experimental.xlsx")
 calculations_folder = os.path.join(DATA_PATH, "calculations")
+# calculations_folder = CALCS_FOLDER
 calculations_wb = os.path.join(DATA_PATH, "CEBE_Data.xlsx")
-algorithms = ["mom"]
+algorithms = ["mom"]  # + ["gracemom"]
 pobj = Parser.ParsedData(
     experimental_wb, calculations_folder, algorithms, calculations_wb
 )
 # pobj.debug = True
-pobj.main(save=False)
+pobj.main(save=True)
 # pp.pprint(pobj.algoToData['mom']['o']['h2o']['D'])
 
 
@@ -45,60 +47,86 @@ fname = "o-series"  # specify the file name to which this will be saved
 # --------------- PERFORM EXTRAPOLATION ---------------
 
 eobj = Extrapolation.WholeDataset()
-# eobj.parse_scheme('T-Q-CCSD')
-# eobj.parse_scheme('T-Q-CCSD(T)')
-# eobj.parse_scheme('MP2[D T Q 5]')
-# eobj.parse_scheme('MP2[D T Q]+DifD')
-# eobj.parse_scheme('MP2[D T Q 5]+DifD(T)')
-
-# r1 = eobj.extrapolate_molecule_given_scheme(pobj.algoToData['mom']['o']['h2o'], 'T-Q-CCSD')
-
-# r2 = eobj.extrapolate_molecule_given_scheme(pobj.algoToData['mom']['o']['h2o'], 'T-Q-CCSD(T)')
-
-# r3 = eobj.extrapolate_molecule_given_scheme(pobj.algoToData['mom']['o']['h2o'], 'MP2[T Q 5]')
-
-# r4 = eobj.extrapolate_molecule_given_scheme(pobj.algoToData['mom']['o']['h2o'], 'MP2[T Q 5]+DifD')
-
-# print(f"{r1=}\n{r2=}\n{r3=}\n{r4=}")
 
 # First, let's filter out the molecules we want to use
-# ATOM_TO_MOLS = constants.ATOM_TO_MOLS
-ATOM_TO_MOLS = {
-    "O": "h2o ch3oh co hcho co2 c4h4o ch3coch3 ch3och3 hcooch3 hcooh c2h5oh ch3cooh"
-    + " cf3c-o-oh cf3co-o-h ch2chcho ch3c-o-oh ch3n-o2 h2nc-o-nh2 h2nch-o hc-o-och3 hnc-o ipr-oh pr-oh ch3c-o-och3 ch3co-o-ch3"
+ATOM_TO_MOLS = constants.ATOM_TO_MOLS
+excludeAtomToMols = {
+    "C": set("c-o ch3-c-o2h".split()),
+    "N": set(
+        "mnh2pyridi-n-e onh2pyridi-n-e o-n-h2pyridine m-n-h2pyridine pfpyridine".split()
+    ),
+    "O": set(
+        "cf3co-o-h cf3c-o-oh ch3co-o-ch3 ch3c-o-och3 ".split()
+    ),
+    "F": set("cf3ocf3".split()),
 }
 atomToMols = {
-    atom.lower(): set(molStr.split()) for atom, molStr in ATOM_TO_MOLS.items()
+    atom.lower(): set(ATOM_TO_MOLS[atom]) - excludeAtomToMols[atom]
+    for atom in ATOM_TO_MOLS
 }
+# atomToMols = ATOM_TO_MOLS
+# atomToMols = constants.ATOM_PARTITIONED['big']
+# atomToMols['o'] = atomToMols['o']-constants.ATOM_PARTITIONED['small']['o']
 
 filteredData = pobj.filter_data_by_molecules(pobj.algoToData, atomToMols)
 filteredData = pobj.filter_by_presence_of_experimental(filteredData)
 
-# pp.pprint(atomToMols)
+# ---------------------------------------
+# atomToExper = {}
+# for atom, molData in filteredData["mom"].items():
+#     for molecule in molData.keys():
+#         atomToExper.setdefault(atom, {}).setdefault(constants.FNAME_TO_MOLS[molecule]["latex"], pobj.molToExper[molecule])
 
-# eobj.extrapolate_all_data(
-#     filteredData, schemes=["T-Q-CCSD", "T-Q-5-HF", "MP2[T Q]+DifD(T)"]
-# )
-eobj._create_extrapolation_schemes()
-eobj.debug = False
-# eobj.parse_scheme(scheme='MP2[T Q 5]+DifSTO-3G(T)')
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["HF"])
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["CCSD"])
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["MP2"])
-# pp.pprint(pobj.molToExper)
-eobj.calculate_errors(pobj.molToExper)
-# print(eobj.algorithmToError['mom']['o']['h2o'])
-eobj.calculate_series_statistics()
-# print(eobj.algoToAtomStats['mom']['o']['T-Q-CCSD'])
-eobj.calculate_overall_statistics()
-# print(eobj.algoToStats['mom']['T-Q-CCSD'])
-# print(eobj.algoToStats['mom']['MP2[D T Q 5]'])
-# print(eobj.algoToStats['mom']['MP2[D T Q 5]+DifD(T)'])
-# print(eobj.smallBasisException)
+# import itertools
+# def create_reference_values_table(data, columns=3):
+#     subcolumn_headers = ["Molecule", "CEBE (Exp)"] * columns
+#     header_format = " & ".join(subcolumn_headers) + " \\\\"
+
+#     latex_table = [
+#         "\\begin{table}",
+#         "\\centering",
+#         "\\begin{tabular}{" + "lc" * columns + "}",
+#         "\\toprule",
+#         header_format,
+#         "\\midrule"
+#     ]
+    
+#     row_format = " & ".join(["{} & {:.2f}"] * columns) + " \\\\"
+
+#     items = [("\ch{%s}"%molecule, cebe) for atom, molToCebe in data.items() for molecule, cebe in molToCebe.items()]
+#     items_sorted = sorted(items, key=lambda x: x[-1])
+    
+#     for row in itertools.zip_longest(*[iter(items_sorted)]*columns, fillvalue=("", 0)):
+#         latex_table.append(row_format.format(*itertools.chain.from_iterable(row)))
+#     latex_table.extend([
+#         "\\bottomrule",
+#         "\\end{tabular}",
+#         "\\caption{Energies of molecules by atom}",
+#         "\\end{table}"
+#     ])
+    
+#     return "\n".join(latex_table)
+
+# ref_table = create_reference_values_table(atomToExper, columns=3)
+# with open(os.path.join(DATA_PATH, "reference_values_table.tex"), "w") as f:
+#     f.write(ref_table)
+# ---------------------------------------
 
 pobj.calculate_errors(filteredData)
 pobj.calculate_series_statistics()
 pobj.calculate_overall_statistics()
+
+
+# eobj._create_extrapolation_schemes()
+# eobj.debug = False
+# eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["HF"])
+# eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["CCSD"])
+# eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["MP2"])
+
+# eobj.calculate_errors(pobj.molToExper)
+# eobj.calculate_series_statistics()
+# eobj.calculate_overall_statistics()
+
 
 # --------------- CREATE TABLES ---------------
 
@@ -114,16 +142,16 @@ table2 = CreateTables.MethodSummary(
 )
 table2.all_results()
 
-# # breakpoint()
+# # # breakpoint()
 
 # table3 = CreateTables.ExtrapSchemeSummary(
 #     eobj.algoToStats["mom"],
 #     eobj.algoToAtomStats["mom"],
 #     save_folder=os.path.join(DATA_PATH, "paper-tables", "extrap-summaries"),
-#     show_sample_size=False,
-#     isPublication=True,
+#     show_sample_size=True,
+#     isPublication=False,
 # )
-# # print(eobj.algoToAtomStats['mom']['o'])
+# # # print(eobj.algoToAtomStats['mom']['o'])
 # eobj._schemeIterKeys = ["HF", "CCSD", "MP2"]
 # table3.results_for_schemes(scheme_factory=eobj.scheme_generator)
 
@@ -140,12 +168,28 @@ table2.all_results()
 # --------------- CREATE FIGURES ---------------
 # CreateFigures._manual_delay()
 
-figures_path = os.path.join(DATA_PATH, "paper-figures")
-# CreateFigures.method_error_bars_general(pobj.algoToStats["mom"], figures_path)
-# CreateFigures.method_error_bars_series(pobj.algoToAtomStats["mom"], figures_path)
-
-ccsdNames = "D-T-Q-CCSD D-T-Q-CCSD(T) T-Q-CCSD T-Q-CCSD(T)".split()
-ccsdColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
+# figures_path = os.path.join(DATA_PATH, "paper-figures")
+# # CreateFigures.method_error_bars_general(pobj.algoToStats["mom"], figures_path)
+# CreateFigures.method_error_bars_series(
+#     atomToBasisStats=pobj.algoToAtomStats["mom"],
+#     bases="D T Q 5".split(),
+#     save_path=figures_path,
+#     fname_suffix="_ccReg"
+# )
+# CreateFigures.method_error_bars_series(
+#     atomToBasisStats=pobj.algoToAtomStats["mom"],
+#     bases="pcX-1 pcX-2 pcX-3 pcX-4".split(),
+#     save_path=figures_path,
+#     fname_suffix="_pcX"
+# )
+# CreateFigures.method_error_bars_series(
+#     atomToBasisStats=pobj.algoToAtomStats["mom"],
+#     bases="ccX-DZ ccX-TZ ccX-QZ ccX-5Z".split(),
+#     save_path=figures_path,
+#     fname_suffix="_ccX"
+# )
+# ccsdNames = "D-T-Q-CCSD D-T-Q-CCSD(T) T-Q-CCSD T-Q-CCSD(T)".split()
+# ccsdColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
 
 # CreateFigures.extrap_err_bars_dtstudy(
 #     eobj.algoToAtomStats["mom"], ccsdNames, ccsdColors, figures_path

@@ -1,14 +1,14 @@
 from pprint import pprint
 
 ATOM_TO_MOLS = {
-    "C": "c-cl2h2 c-cl3h c-cl4 c-clh3 c-f2h2 c-f3h c-f4 c-fh3 c-h3cch c-h3cn ch3-c-n c-h3nc c-h3oh c-h4 c-o2 h2c-c-ch2 h-c-o2ch3 c2-h2 c2-h4 c2-h6 c2h6-c-o c-h2o ch3-c-ho ch3-c-o2h c-o c-h3och3",  # ch3n-c n-c-cn h-c-n
-    "N": "c2h5nh2 ch3nh2 ch3nhch3 ch3x3n hcn hconh2 hno2 hno3 nfh2 nh3 nonh2 pyrrole n2h4 pyridine"
-    + " c2h5c-n ch2chc-n ch3sc-n h-n-co h2n-c2h4oh h2n-cho hco-n-hch3 h2n-conh2 n-cch2cn"
-    + " ofpyridine pfpyridine me2-n-cho ipr-nh2 h2n-c2h4nh2 pr-nh2 pohpyridine mnh2pyridi-n-e m-n-h2pyridine o-n-h2pyridine pnh2pyridi-n-e p-n-h2pyridine 2pyrido-n-e 2pyrido-n-earo onh2pyridi-n-e",  # + ' ch3-n-o2', # c2n2 #
-    "O": "h2o c2h5oh c4h4o ch3cooh ch3coch3 ch3och3 ch3oh co hcho hcooch3 hcooh co2"
-    + " cf3c-o-oh cf3co-o-h ch2chcho ch3c-o-oh ch3n-o2 h2nc-o-nh2 h2nch-o hc-o-och3 hnc-o ipr-oh pr-oh ch3c-o-och3 ch3co-o-ch3",  #
-    "F": "c2h3f c2h5f c3h7f ch3cof ch3nhcof ch3nhf ch3of foh hccf hoch2f nh2ch2f nh2f ch3f chf3 ch2f2 cf4 f2 c5h5f"
-    + " hf pf3 cf3chch2 cf3cch bf3 cf3ocf3",  # c2f4
+    "C": "c-cl2h2 c-cl3h c-cl4 c-clh3 c-f2h2 c-f3h c-f4 c-fh3 c-h3cch c-h3cn ch3-c-n c-h3nc c-h3oh c-h4 c-o2 h2c-c-ch2 h-c-o2ch3 c2-h2 c2-h4 c2-h6 c2h6-c-o c-h2o ch3-c-ho ch3-c-o2h c-o c-h3och3".split(),  # ch3n-c n-c-cn h-c-n
+    "N": "c2h5nh2 ch3nh2 ch3nhch3 ch3x3n hcn hconh2 hno2 hno3 nfh2 nh3 nonh2 pyrrole n2h4 pyridine".split()
+    + " c2h5c-n ch2chc-n ch3sc-n h-n-co h2n-c2h4oh h2n-cho hco-n-hch3 h2n-conh2 n-cch2cn".split()
+    + " ofpyridine pfpyridine me2-n-cho ipr-nh2 h2n-c2h4nh2 pr-nh2 pohpyridine mnh2pyridi-n-e m-n-h2pyridine o-n-h2pyridine pnh2pyridi-n-e p-n-h2pyridine 2pyrido-n-e 2pyrido-n-earo onh2pyridi-n-e".split(),  # + ' ch3-n-o2', # c2n2 #
+    "O": "h2o c2h5oh c4h4o ch3cooh ch3coch3 ch3och3 ch3oh co hcho hcooch3 hcooh co2".split()
+    + " cf3c-o-oh cf3co-o-h ch2chcho ch3c-o-oh ch3n-o2 h2nc-o-nh2 h2nch-o hc-o-och3 hnc-o ipr-oh pr-oh ch3c-o-och3 ch3co-o-ch3".split(),  #
+    "F": "c2h3f c2h5f c3h7f ch3cof ch3nhcof ch3nhf ch3of foh hccf hoch2f nh2ch2f nh2f ch3f chf3 ch2f2 cf4 f2 c5h5f".split()
+    + " hf pf3 cf3chch2 cf3cch bf3 cf3ocf3".split(),  # c2f4
 }
 
 FNAME_TO_MOLS = {

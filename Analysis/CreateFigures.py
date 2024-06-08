@@ -14,6 +14,15 @@ BASIS_TO_METHOD = {
     "Q": "UHF MP2 CCSD CCSD(T)".split(),
     "5": "UHF MP2".split(),
 }
+BASIS_TO_METHOD["pcX-1"] = BASIS_TO_METHOD["D"]
+BASIS_TO_METHOD["pcX-2"] = BASIS_TO_METHOD["T"]
+BASIS_TO_METHOD["pcX-3"] = BASIS_TO_METHOD["Q"]
+BASIS_TO_METHOD["pcX-4"] = BASIS_TO_METHOD["5"]
+BASIS_TO_METHOD["ccX-DZ"] = BASIS_TO_METHOD["D"]
+BASIS_TO_METHOD["ccX-TZ"] = BASIS_TO_METHOD["T"]
+BASIS_TO_METHOD["ccX-QZ"] = BASIS_TO_METHOD["Q"]
+BASIS_TO_METHOD["ccX-5Z"] = BASIS_TO_METHOD["5"]
+
 METHOD_TO_BASIS = {}
 for basis, methods in BASIS_TO_METHOD.items():
     for method in methods:
@@ -94,7 +103,7 @@ def method_error_bars_general(basisStats: BasisStatsType, save_path: str) -> go.
 
 
 def method_error_bars_series(
-    atomToBasisStats: AtomBasisStatsType, save_path: str
+    atomToBasisStats: AtomBasisStatsType, bases:List[str], save_path: str, fname_suffix:str=''
 ) -> go.Figure:
     styler = Styler()
     styler.AXIS_TITLE_SIZE = 14
@@ -109,7 +118,6 @@ def method_error_bars_series(
         vertical_spacing=0.08,
         horizontal_spacing=0.07,
     )
-    bases = "D T Q 5".split()
     atoms = "c n o f".split()
     for j, atom in enumerate(atoms):
         showLegend = True if j == 0 else False
@@ -160,7 +168,7 @@ def method_error_bars_series(
         ),
     )
 
-    styler._save_fig(fig, save_path, "methods_bars_series")
+    styler._save_fig(fig, save_path, "methods_bars_series"+fname_suffix)
     return fig
 
 
