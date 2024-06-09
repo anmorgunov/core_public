@@ -1,19 +1,55 @@
-from typing import Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+    cast,
+)
 
 import numpy as np
+import numpy.typing as npt
 import scipy.optimize
 
-Number = Union[float, int]
-ExperDataType = Dict[str, Number]
-BasisDataType = Dict[str, Union[str, Number]]
-SchemeStatsType = Dict[str, Dict[str, Number]]
-AlgoStatsType = Dict[str, SchemeStatsType]
-AtomSchemeStatsType = Dict[str, Dict[str, SchemeStatsType]]
-AlgoAtomStatsType = Dict[str, AtomSchemeStatsType]
+# fmt:off
+allowed_methods = {"HF", "UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT"}
+LitKeyType = Literal["Frozen orbitals", "Swapped orbitals", "T1 for RHF", "T1 for UHF(a)", "T1 for UHF(b)", "UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT", "error", "detailed"]
+DataPointType = TypedDict(
+    "DataPointType", {"Frozen orbitals": str, "Swapped orbitals": str, "UHF": float, "MP2": float, "MP2.5": float, "MP3": float, "CCSD": float, "CCSD(T)": float, "CCSDT": float, "T1 for RHF": str, "T1 for UHF(a)": str, "T1 for UHF(b)": str, "error": str, "detailed": str,},
+    total=False,
+)
+# fmt:on
+ExperDataType = Dict[str, float]
+# DataPointType = Dict[str, Union[str, float]]
+BasisDataType = Dict[str, DataPointType]
+MoleculeDataType = Dict[str, BasisDataType]
+AtomDataType = Dict[str, MoleculeDataType]
+AlgoDataType = Dict[str, AtomDataType]
 
-SchemeResultType = Dict[str, Optional[Number]]
-AtomMolDataType = Dict[str, Dict[str, SchemeResultType]]
-AlgoDataType = Dict[str, AtomMolDataType]
+SchemeResultType = Dict[str, Optional[float]]
+SchemesCBSType = Dict[str, SchemeResultType]
+MolCBSType = Dict[str, SchemesCBSType]
+AtomCBSType = Dict[str, MolCBSType]
+AlgoCBSType = Dict[str, AtomCBSType]
+
+SchemeErrType = Dict[str, float]
+MolErrType = Dict[str, SchemeErrType]
+AtomErrType = Dict[str, MolErrType]
+AlgoErrType = Dict[str, AtomErrType]
+
+SchemeErrsType = Dict[str, List[float]]
+AlgoErrsType = Dict[str, SchemeErrsType]
+AtomErrsType = Dict[str, SchemeErrsType]
+AlgoAtomErrsType = Dict[str, AtomErrsType]
+
+StatsType = Dict[str, Union[int, float, npt.NDArray[np.float64]]]
+SchemeStatsType = Dict[str, StatsType]
+AlgoStatsType = Dict[str, SchemeStatsType]
+AtomStatsType = Dict[str, SchemeStatsType]
+AlgoAtomStatsType = Dict[str, AtomStatsType]
 
 
 def _helgaker(zeta: int, a: float, b: float) -> float:
@@ -36,10 +72,12 @@ def extrapolate_energies(zetas: List[int], values: List[float]) -> float:
     return cast(float, popt[0])
 
 
-def parse_scheme(scheme: str) -> Tuple[str, List[str], str, bool | None]:
+def parse_scheme(scheme: str) -> Tuple[str, List[str], str, Optional[bool]]:
     if "+" in scheme:
         preargs, corr = scheme.split("+")
         args = preargs.replace("[", " ").replace("]", " ").split()
+        if args[0] not in allowed_methods:
+            raise KeyError(f"Received unrecognized method {args[0]}")
         method = args[0]
         bases = args[1:]
         corrBasis = corr.split("Dif")[-1]
@@ -50,12 +88,16 @@ def parse_scheme(scheme: str) -> Tuple[str, List[str], str, bool | None]:
             corrTriples = False
     elif "[" in scheme:
         args = scheme.replace("[", " ").replace("]", " ").split()
+        if args[0] not in allowed_methods:
+            raise KeyError(f"Received unrecognized method {args[0]}")
         method = args[0]
         bases = args[1:]
         corrBasis = None
         corrTriples = None
     elif "-" in scheme:
         args = scheme.split("-")
+        if args[-1] not in allowed_methods:
+            raise KeyError(f"Received unrecognized method {args[0]}")
         method = args[-1]
         bases = args[:-1]
         corrBasis = None
@@ -71,35 +113,30 @@ def extrapolate_molecule_given_scheme(
     method, bases, corrBasis, corrTriples = parse_scheme(scheme)
     if method == "HF":
         method = "UHF"
+    method = cast(LitKeyType, method)
 
-    basToCoeff = {
-        "D": 2,
-        "T": 3,
-        "Q": 4,
-        "5": 5,
-        "pcX-1": 2,
-        "pcX-2": 3,
-        "pcX-3": 4,
-        "pcX-4": 5,
-        "ccX-DZ": 2,
-        "ccX-TZ": 3,
-        "ccX-QZ": 4,
-        "ccX-5Z": 5,
-    }
+    # fmt:off
+    basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5, "pcX-1": 2, "pcX-2": 3, "pcX-3": 4, "pcX-4": 5, "ccX-DZ": 2, "ccX-TZ": 3, "ccX-QZ": 4, "ccX-5Z": 5,}  # fmt:on
     if len(bases) == 1:
-        assert (
-            corrBasis is not None
-        ), "You need to specify at least two basis sets for extrapolation"
-
-        method_cbs = basisData[bases[0]][method]
+        if corrBasis is None:
+            raise TypeError(
+                "You need to specify at least two basis sets for extrapolation"
+            )
+        method_cbs = cast(float, basisData[bases[0]][method])
     else:
-        energies = [basisData[basis][method] for basis in bases]
+        energies = [cast(float, basisData[basis][method]) for basis in bases]
         zetas = [basToCoeff[basis] for basis in bases]
 
         method_cbs = extrapolate_energies(zetas, energies)
 
-    if corrBasis is not None:
-        corrMethod = "CCSD(T)" if corrTriples else "CCSD"
+    if corrBasis is None:
+        return {
+            "cbs": method_cbs,
+            "cbs+corr": None,
+            "corr": None,
+        }
+    else:
+        corrMethod: LitKeyType = "CCSD(T)" if corrTriples else "CCSD"
         if (
             corrBasis not in basisData
             or "MP2" not in basisData[corrBasis]
@@ -108,15 +145,9 @@ def extrapolate_molecule_given_scheme(
             return None
 
         mp2 = basisData[corrBasis]["MP2"]
-        cc = basisData[corrBasis][corrMethod]
+        cc = cast(float, basisData[corrBasis][corrMethod])
         corr = cc - mp2
         return {"cbs": method_cbs, "cbs+corr": method_cbs + corr, "corr": corr}
-    else:
-        return {
-            "cbs": method_cbs,
-            "cbs+corr": None,
-            "corr": None,
-        }
 
 
 class WholeDataset:
@@ -124,15 +155,15 @@ class WholeDataset:
     As of now, it assumes you have CCSD/CCSD(T) results for D,T,Q basis sets AND MP2 results for D,T,Q,5
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialization
         """
-        self.algoToCBS: AlgoDataType = {}
-        self.smallBasisException = {}
+        self.algoToCBS: AlgoCBSType = {}
+        self.smallBasisException: Dict[str, Dict[str, Dict[str, str]]] = {}
         self.debug = False
 
-    def extrapolate_all_data(self, algoData: AlgoDataType, schemes: List[str]):
+    def extrapolate_all_data(self, algoData: AlgoDataType, schemes: List[str]) -> None:
         for algorithm, atomData in algoData.items():
             for atom, molData in atomData.items():
                 for mol, basisData in molData.items():
@@ -147,8 +178,8 @@ class WholeDataset:
                                 atom, {}
                             ).setdefault(mol, {})[scheme] = result
 
-    def calculate_errors(self, experimentalData: ExperDataType):
-        algoToError = {}
+    def calculate_errors(self, experimentalData: ExperDataType) -> None:
+        algoToError: AlgoErrType = {}
         for algorithm, atomData in self.algoToCBS.items():
             for atom, molData in atomData.items():
                 for mol, schemeData in molData.items():
@@ -159,15 +190,19 @@ class WholeDataset:
                                 atom, {}
                             ).setdefault(mol, {})[scheme] = error
                         else:
+                            if data["cbs"] is None:
+                                raise ValueError(
+                                    f"Expected to find cbs value for {algorithm}->{atom}->{mol}->{scheme} but found None instead"
+                                )
                             error = data["cbs"] - experimentalData[mol]
                             algoToError.setdefault(algorithm, {}).setdefault(
                                 atom, {}
                             ).setdefault(mol, {})[scheme] = error
         self.algoToError = algoToError
 
-    def calculate_series_statistics(self):
+    def calculate_series_statistics(self) -> None:
         assert hasattr(self, "algoToError"), "You need to call calculate_errors first"
-        algoToAtomErrors = {}
+        algoToAtomErrors: AlgoAtomErrsType = {}
         for algorithm, atomData in self.algoToError.items():
             for atom, molData in atomData.items():
                 for schemeData in molData.values():
@@ -177,9 +212,9 @@ class WholeDataset:
                         ).setdefault(scheme, []).append(error)
 
         algoToAtomStats: AlgoAtomStatsType = {}
-        for algorithm, atomData in algoToAtomErrors.items():
-            for atom, schemeData in atomData.items():
-                for scheme, errors_list in schemeData.items():
+        for algorithm, atomErrData in algoToAtomErrors.items():
+            for atom, schemeErrData in atomErrData.items():
+                for scheme, errors_list in schemeErrData.items():
                     errors = np.array(errors_list)
                     abs_errs = np.abs(errors)
                     algoToAtomStats.setdefault(algorithm, {}).setdefault(atom, {})[
@@ -196,9 +231,9 @@ class WholeDataset:
                     }
         self.algoToAtomStats = algoToAtomStats
 
-    def calculate_overall_statistics(self):
+    def calculate_overall_statistics(self) -> None:
         assert hasattr(self, "algoToError"), "You need to call calculate_errors first"
-        algoToErrors = {}
+        algoToErrors: AlgoErrsType = {}
         for algorithm, atomData in self.algoToError.items():
             for molData in atomData.values():
                 for schemeData in molData.values():
@@ -208,9 +243,9 @@ class WholeDataset:
                         ).append(error)
 
         algoToStats: AlgoStatsType = {}
-        for algorithm, schemeData in algoToErrors.items():
-            for scheme, errors in schemeData.items():
-                errors = np.array(errors)
+        for algorithm, schemeErrsData in algoToErrors.items():
+            for scheme, errors_list in schemeErrsData.items():
+                errors = np.array(errors_list)
                 abs_errs = np.abs(errors)
                 algoToStats.setdefault(algorithm, {})[scheme] = {
                     "MSE": np.mean(errors),
@@ -224,7 +259,7 @@ class WholeDataset:
                 }
         self.algoToStats = algoToStats
 
-    def _create_extrapolation_schemes(self):
+    def _create_extrapolation_schemes(self) -> None:
         # CCSD schemes
         ccsd_schemes = []
         for bases in "D-T T-Q D-T-Q".split():
@@ -283,7 +318,7 @@ class WholeDataset:
                 yield scheme
 
     @property
-    def schemes(self):
+    def schemes(self) -> Iterable[str]:
         print("call schemes")
         return self.scheme_generator()
 

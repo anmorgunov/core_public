@@ -1,22 +1,25 @@
-import os
-from typing import List
+from pathlib import Path
+from typing import List, Union, cast
 
 
 class Table:
 
-    def __init__(self):
-        pass
-
     @staticmethod
-    def export_table(caption, label, positioning, headers, body, name):
-        f = open(f"{name}.tex", "w")
-        f.write("\\begin{table}\n")
-        f.write("  \caption{\\textbf{%s}}\n" % caption)
-        f.write("  \label{tbl:%s}\n" % label)
-        f.write("  \\begin{tabular}{%s}\n" % positioning)
-        f.write("    \\toprule\n")
+    def export_table(
+        caption: str,
+        label: str,
+        positioning: str,
+        headers: Union[str, List[str]],
+        body: List[List[str]],
+        save_path: str,
+    ) -> None:
+        file_content = "\\begin{table}\n"
+        file_content += "  \caption{\\textbf{%s}}\n" % caption
+        file_content += "  \label{tbl:%s}\n" % label
+        file_content += "  \\begin{tabular}{%s}\n" % positioning
+        file_content += "    \\toprule\n"
 
-        def printrow(row: List[float]):
+        def printrow(row: List[str]) -> List[str]:
             return ["    "] + [
                 f"{rowElt} & " if i + 1 != len(row) else f"{rowElt} \\\ \n"
                 for i, rowElt in enumerate(row)
@@ -24,7 +27,7 @@ class Table:
 
         if isinstance(headers[0], list):
             for header in headers:
-                f.write("".join(printrow(header)))
+                file_content += "".join(printrow(header))
             assert len(positioning.split()) == len(
                 header
             ), "You must specify the alignment of each column"
@@ -36,24 +39,24 @@ class Table:
             assert len(splitted) == len(
                 headers
             ), "You must specify the alignment of each column"
-            f.write("".join(printrow(headers)))
-        f.write("    \midrule\n")
+            file_content += "".join(printrow(cast(List[str], headers)))
+        file_content += "    \midrule\n"
         for row in body:
-            f.write("".join(printrow(row)))
-        f.write("    \\bottomrule\n")
-        f.write("  \end{tabular}\n")
-        f.write("\end{table}\n")
-        f.close()
+            file_content += "".join(printrow(row))
+        file_content += "    \\bottomrule\n"
+        file_content += "  \end{tabular}\n"
+        file_content += "\end{table}\n"
+        with open(save_path, "w") as f:
+            f.write(file_content)
 
 
 if __name__ == "__main__":
     testHead = ["Molecule", "Atom", "UHF", "UMP2"]
     testBody = [["co", "o", "12.3", "12.1"], ["co", "c", "8.5", "8.4"]]
-    T = Table()
     testCaption = "This is an example of a table"
     testLabel = "sampletable"
     testPositioning = "c c c c"
-    testPath = os.path.join(os.path.dirname(__file__), "testTable")
-    T.export_table(
-        testCaption, testLabel, testPositioning, testHead, testBody, testPath
+    testPath = Path(__file__).resolve().parent / "testTable.tex"
+    Table.export_table(
+        testCaption, testLabel, testPositioning, testHead, testBody, str(testPath)
     )

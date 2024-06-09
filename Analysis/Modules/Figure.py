@@ -1,11 +1,14 @@
 import os
+from typing import Union
 
 import plotly.graph_objects as go
+
+Number = Union[int, float]
 
 
 class Styler:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.BLACK = "rgb(51, 51, 51)"
         self.GREY = "rgb(236, 236, 236)"
         self.TITLE_SIZE = 12
@@ -15,7 +18,7 @@ class Styler:
         self.AXIS_TITLE_SIZE = 18
         self.ANNOTATION_SIZE = 14
 
-    def _update_fig(self, figure, title=""):
+    def _update_fig(self, figure: go.Figure, title: str = "") -> None:
         """A wrapper function with common settings for Figure object from plotly
 
         Args:
@@ -32,7 +35,14 @@ class Styler:
             plot_bgcolor=self.BG_COLOR,
         )
 
-    def _update_axes(self, figure, xdtick=1, ydtick=1, xtitle="", ytitle=""):
+    def _update_axes(
+        self,
+        figure: go.Figure,
+        xdtick: Number = 1,
+        ydtick: Number = 1,
+        xtitle: str = "",
+        ytitle: str = "",
+    ) -> None:
 
         figure.update_xaxes(
             title=dict(
@@ -84,7 +94,15 @@ class Styler:
             ),
         )
 
-    def add_r_equation(self, figure, r_sq, x, y, dy=0.05, num_digs=4):
+    def add_r_equation(
+        self,
+        figure: go.Figure,
+        r_sq: float,
+        x: Number,
+        y: Number,
+        dy: Number = 0.05,
+        num_digs: int = 4,
+    ) -> None:
         figure.add_annotation(
             dict(
                 xref="paper",
@@ -110,7 +128,7 @@ class Styler:
         jpg: bool = False,
         svg: bool = False,
         pdf: bool = True,
-    ):
+    ) -> None:
         if html:
             figure.write_html(
                 os.path.join(path, "html", f"{fname}.html"),

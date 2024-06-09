@@ -1,12 +1,38 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, List, Literal, Optional, Set, TypedDict, cast
 
 import numpy as np
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
+# fmt:off
+allowed_extra_keys = {"Frozen orbitals", "Swapped orbitals", "T1 for RHF", "T1 for UHF(a)", "T1 for UHF(b)", "error", "detailed"}
+allowed_methods = {"UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT"}
+LitKeyType = Literal["Frozen orbitals", "Swapped orbitals", "T1 for RHF", "T1 for UHF(a)", "T1 for UHF(b)", "UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT", "error", "detailed"]
+# fmt:on
+DataPointType = TypedDict(
+    "DataPointType",
+    {
+        "Frozen orbitals": str,
+        "Swapped orbitals": str,
+        "UHF": float,
+        "MP2": float,
+        "MP2.5": float,
+        "MP3": float,
+        "CCSD": float,
+        "CCSD(T)": float,
+        "CCSDT": float,
+        "T1 for RHF": str,
+        "T1 for UHF(a)": str,
+        "T1 for UHF(b)": str,
+        "error": str,
+        "detailed": str,
+    },
+    total=False,
+)
+
 ExperDataType = Dict[str, float]
-DataPointType = Dict[str, Union[str, float]]
+# DataPointType = Dict[str, Union[str, float]]
 BasisDataType = Dict[str, DataPointType]
 MoleculeDataType = Dict[str, BasisDataType]
 AtomDataType = Dict[str, MoleculeDataType]
@@ -138,14 +164,22 @@ class ParsedData:
                             for rline in lines:
                                 line = rline.split("\n")[0]
                                 if ":" in line:
-                                    key, val = rline.split("\n")[0].split(":")
+                                    _line_comps = rline.split("\n")[0].split(":")
+                                    if _line_comps[0] not in allowed_extra_keys:
+                                        raise KeyError(
+                                            f"Received unrecognized entry {_line_comps[0]}, expected one of {allowed_extra_keys}"
+                                        )
+                                    key: LitKeyType = cast(LitKeyType, _line_comps[0])
+                                    val: str = _line_comps[1]
                                     data_point[key] = val
                                     continue
                                 if "=" not in line:
                                     continue
                                 rmethod, rvalue = line.split(" = ")
                                 value = float(rvalue.split(" ")[0])
-                                posthf_method = rmethod.split(" ")[1][1:-1]
+                                posthf_method = cast(
+                                    LitKeyType, rmethod.split(" ")[1][1:-1]
+                                )
                                 data_point[posthf_method] = value
                         # Case 2. Calculation was unsuccesful and did not terminate normally
                         else:

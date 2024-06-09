@@ -21,7 +21,7 @@ pobj = Parser.ParsedData(
     algorithms=["mom"],
     calculations_folder=DATA_PATH / "calculations",
 )
-pobj.debug = True
+# pobj.debug = True
 pobj.process(save=False)
 # pp.pprint(pobj.algoToData['mom']['o']['h2o']['D'])
 
