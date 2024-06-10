@@ -128,14 +128,6 @@ FNAME_TO_MOLS={
 }
 # fmt:on
 
-COLORS = {
-    "red": ["#D7263D", "#A40E4C"],
-    "markers": [
-        "#01BAEF",
-    ],  # '#F18F01', '#4FB0C6'
-    "line": ["#744FC6", "#D7BCE8"],
-}
-
 mp2_opts = "MP2(T), MP2(Q), MP2(5), MP2(T Q), MP2(D T Q), MP2(T Q 5), MP2(D T Q 5), MP2(D T Q 5)"
 mp2corr_opts = "MP2(T)+DifD, MP2(T)+DifD(T), MP2(Q)+DifD, MP2(Q)+DifD(T), MP2(5)+DifD, MP2(5)+DifD(T), MP2(T Q)+DifD, MP2(T Q)+DifD(T), MP2(D T Q)+DifD, MP2(D T Q)+DifD(T), MP2(D T)+DifD, MP2(D T)+DifD(T), MP2(T Q 5)+DifD, MP2(T Q 5)+DifD(T), MP2(D T Q 5)+DifD, MP2(D T Q 5)+DifD(T)"
 EXTRAPOLATION_OPTIONS = {
@@ -148,5 +140,5 @@ EXTRAPOLATION_OPTIONS = {
 if __name__ == "__main__":
     d = {}
     for k, v in ATOM_TO_MOLS.items():
-        d[k] = len(v.split())
+        d[k] = len(v)
     print(d)
