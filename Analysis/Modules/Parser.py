@@ -7,7 +7,7 @@ from openpyxl.styles import Font
 
 # fmt:off
 allowed_extra_keys = {"Frozen orbitals", "Swapped orbitals", "T1 for RHF", "T1 for UHF(a)", "T1 for UHF(b)", "error", "detailed"}
-allowed_methods = {"UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT"}
+allowed_methods = {"HF", "UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT"}
 LitKeyType = Literal["Frozen orbitals", "Swapped orbitals", "T1 for RHF", "T1 for UHF(a)", "T1 for UHF(b)", "UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT", "error", "detailed"]
 # fmt:on
 DataPointType = TypedDict(

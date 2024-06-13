@@ -8,7 +8,7 @@ atom_mols_list = {
     "F": "c2h3f c2h5f c3h7f ch3cof ch3nhcof ch3nhf ch3of foh hccf hoch2f nh2ch2f nh2f ch3f chf3 ch2f2 cf4 f2 c5h5f".split()
     + " hf pf3 cf3chch2 cf3cch bf3 cf3ocf3".split(),  # c2f4
 }
-ATOM_TO_MOLS = {atom: set(mols) for atom, mols in atom_mols_list.items()}
+ATOM_TO_MOLS = {atom.lower(): set(mols) for atom, mols in atom_mols_list.items()}
 
 # fmt:off
 FNAME_TO_MOLS={

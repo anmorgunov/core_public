@@ -84,7 +84,7 @@ def parse_scheme(scheme: str) -> Tuple[str, List[str], str, Optional[bool]]:
     elif "-" in scheme:
         args = scheme.split("-")
         if args[-1] not in allowed_methods:
-            raise KeyError(f"Received unrecognized method {args[0]}")
+            raise KeyError(f"Received unrecognized method {args[-1]}")
         method = args[-1]
         bases = args[:-1]
         corrBasis = None
@@ -155,6 +155,8 @@ class WholeDataset:
             for atom, molData in atomData.items():
                 for mol, basisData in molData.items():
                     for scheme in schemes:
+                        if self.debug:
+                            print(f"{atom=}, {mol=}, {scheme=}")
                         result = extrapolate_molecule_given_scheme(basisData, scheme)
                         if result is None:
                             self.smallBasisException.setdefault(
@@ -253,12 +255,12 @@ class WholeDataset:
             for method in "CCSD CCSD(T)".split():
                 ccsd_schemes.append(f"{bases}-{method}")
 
-        bases_combs = "pcX-1 pcX-2 | pcX-2 pcX-3 | pcX-1 pcX-2 pcX-3 | ccX-DZ ccX-TZ | ccX-TZ ccX-QZ | ccX-DZ ccX-TZ ccX-QZ".split(
-            " | "
-        )
-        for bases in bases_combs:
-            for method in "CCSD CCSD(T)".split():
-                ccsd_schemes.append(f"{method}[{bases}]")
+        # bases_combs = "pcX-1 pcX-2 | pcX-2 pcX-3 | pcX-1 pcX-2 pcX-3 | ccX-DZ ccX-TZ | ccX-TZ ccX-QZ | ccX-DZ ccX-TZ ccX-QZ".split(
+        #     " | "
+        # )
+        # for bases in bases_combs:
+        #     for method in "CCSD CCSD(T)".split():
+        #         ccsd_schemes.append(f"{method}[{bases}]")
         if self.debug:
             print(f"{ccsd_schemes=}")
 

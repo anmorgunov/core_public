@@ -1,22 +1,13 @@
-import os
-import sys
+from pathlib import Path
 
-sys.path.append(
-    "../core_excitations"
-)  # this allows us to import files from parent directories
-import tools
+base_path = Path(__file__).resolve().parent
+folder_name = "test"
 
-import PRIVATE
-
-ATOM = "newf"
-
-SUBMODULE = "geom_optimization"  # the name of the current folder
-BASE = PRIVATE.BASE_PATH + [
-    SUBMODULE,
-]
+orca_path = base_path / "orca" / folder_name
+orca_path.mkdir(exist_ok=True)
 
 
-def create_orca_input(path, geometry, molecule):
+def create_orca_input(path: Path, geometry: str, molecule: str) -> None:
     keywords = """! RI-MP2 cc-pVQZ cc-PVQZ/C Opt
 %maxcore 4000
 %pal nprocs 16 end
@@ -25,20 +16,12 @@ def create_orca_input(path, geometry, molecule):
     geom = f"""* xyz 0 1
 {geometry}*
 """
-    with open(
-        tools.join_path(
-            path
-            + [
-                f"{molecule}.inp",
-            ]
-        ),
-        "w",
-    ) as f:
+    with open(path / f"{molecule}.inp", "w") as f:
         f.write(keywords)
         f.write(geom)
 
 
-def create_slurm_script(path, molecule):
+def create_slurm_script(path: Path, molecule: str) -> None:
     script = f"""#!/bin/sh
 
 #SBATCH -t 100:00:00
@@ -53,45 +36,24 @@ echo `date` >> "time.txt"
 /home/morgunov/orca/orca {molecule}.inp > {molecule}.out
 echo `date` >> "time.txt"
 """
-    with open(
-        tools.join_path(
-            path
-            + [
-                "submit.sh",
-            ]
-        ),
-        "w",
-    ) as f:
+    with open(path / "submit.sh", "w") as f:
         f.write(script)
 
 
-if f"run-{ATOM}" not in os.listdir(
-    tools.join_path(
-        BASE
-        + [
-            "orca",
-        ],
-        endWithSlash=True,
-    )
-):
-    os.mkdir(tools.join_path(BASE + ["orca", f"run-{ATOM}"], endWithSlash=True))
-
-MOLS = os.listdir(tools.join_path(BASE + ["inits", f"run-{ATOM}"], endWithSlash=True))
-query = " ".join([mol.split(".")[0] for mol in MOLS])
+molecules = [f.name for f in (base_path / "inits" / folder_name).glob("*.xyz")]
+query = " ".join([mol.split(".")[0] for mol in molecules])
 print(query)
-for molExt in MOLS:
-    path = tools.join_path(BASE + ["orca", f"run-{ATOM}"], endWithSlash=True)
-    mol = molExt.split(".")[0]
-    if mol not in os.listdir(path):
-        os.mkdir(
-            tools.join_path(BASE + ["orca", f"run-{ATOM}", mol], endWithSlash=True)
-        )
-    with open(tools.join_path(BASE + ["inits", f"run-{ATOM}", molExt]), "r") as f:
+for mol_file in molecules:
+    mol = mol_file.split(".")[0]
+    molPath = orca_path / mol
+    molPath.mkdir(exist_ok=True)
+
+    with open(base_path / "inits" / folder_name / mol_file, "r") as f:
         lines = f.read().split("\n")
         geometry = "\n".join(lines[2:])
 
-    create_orca_input(BASE + ["orca", f"run-{ATOM}", mol], geometry, mol)
-    create_slurm_script(BASE + ["orca", f"run-{ATOM}", mol], mol)
+    create_orca_input(orca_path / mol, geometry, mol)
+    create_slurm_script(orca_path / mol, mol)
 
 # cf3cooh ch3cooch3
 # pnh2pyridi-n-e me2-n-cho pohpyridine 2pyrido-n-e onh2pyrdi-n-e mnh2pyridi-n-e 2pyrido-n-earo pfpyridine ofpyridine ch3sc-n

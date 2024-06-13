@@ -26,20 +26,19 @@ pobj.process(save=False)
 
 # EXAMPLE: pp.pprint(pobj.algoToData['mom']['o']['h2o']['D'])
 
-
 # the calculations_wb file can become huge quite quickly, so if you want to check on results
 # of certain molecules of interest, you can use the method below
-mols = set("h2o co co2".split())  # specify molecules you're interested in
-fname = "o-series"  # specify the file name to which this will be saved
-extracted_path = DATA_PATH / "extracts" / f"{fname}.xlsx"
-pobj.extract_molecules(mols, str(extracted_path))
+# mols = set("h2o co co2".split())  # specify molecules you're interested in
+# fname = "o-series"  # specify the file name to which this will be saved
+# extracted_path = DATA_PATH / "extracts" / f"{fname}.xlsx"
+# pobj.extract_molecules(mols, str(extracted_path))
 
 # --------------- PERFORM EXTRAPOLATION ---------------
 
 # # First, let's filter out the molecules we want to use
 atomToMols = constants.ATOM_TO_MOLS
-filteredData = pobj.filter_data_by_molecules(pobj.algoToData, atomToMols)
-filteredData = pobj.filter_by_presence_of_experimental(filteredData)
+filtered_by_mols = pobj.filter_data_by_molecules(pobj.algoToData, atomToMols)
+filteredData = pobj.filter_by_presence_of_experimental(filtered_by_mols)
 pobj.calculate_errors(filteredData)
 pobj.calculate_series_statistics()
 pobj.calculate_overall_statistics()

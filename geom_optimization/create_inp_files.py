@@ -1,22 +1,13 @@
-import os
-import sys
+from pathlib import Path
 
-sys.path.append(
-    "../core_excitations"
-)  # this allows us to import files from parent directories
-import tools
+base_path = Path(__file__).resolve().parent
+folder_name = "test"
 
-import PRIVATE
-
-ATOM = "test"
-
-SUBMODULE = "geom_optimization"  # the name of the current folder
-BASE = PRIVATE.BASE_PATH + [
-    SUBMODULE,
-]
+qchem_path = base_path / "qchem" / folder_name
+qchem_path.mkdir(exist_ok=True)
 
 
-def create_qchem_input(path, geometry):
+def create_qchem_input(path: Path, geometry: str) -> None:
     rem = """$rem
    JOBTYPE Opt
    METHOD riMP2
@@ -27,12 +18,12 @@ $end\n\n"""
 0 1
 {geometry}$end
 """
-    with open(tools.join_path(path + ["qchem.in"]), "w") as f:
+    with open(path / "qchem.in", "w") as f:
         f.write(rem)
         f.write(geom)
 
 
-def create_slurm_script(path):
+def create_slurm_script(path: Path) -> None:
     script = """#!/bin/sh
 
 #SBATCH -t 100:00:00
@@ -51,34 +42,21 @@ echo `date` >> "time.txt"
 qchem.latest qchem.in qchem.out
 echo `date` >> "time.txt"
 """
-    with open(tools.join_path(path + ["submit.sh"]), "w") as f:
+    with open(path / "submit.sh", "w") as f:
         f.write(script)
 
 
-if f"run-{ATOM}" not in os.listdir(
-    tools.join_path(
-        BASE
-        + [
-            "qchem",
-        ],
-        endWithSlash=True,
-    )
-):
-    os.mkdir(tools.join_path(BASE + ["qchem", f"run-{ATOM}"], endWithSlash=True))
-
-MOLS = os.listdir(tools.join_path(BASE + ["inits", f"run-{ATOM}"], endWithSlash=True))
-query = " ".join([mol.split(".")[0] for mol in MOLS])
+molecules = [f.name for f in (base_path / "inits" / folder_name).glob("*.xyz")]
+query = " ".join([mol.split(".")[0] for mol in molecules])
 print(query)
-for molExt in MOLS:
-    path = tools.join_path(BASE + ["qchem", f"run-{ATOM}"], endWithSlash=True)
-    mol = molExt.split(".")[0]
-    if mol not in os.listdir(path):
-        os.mkdir(
-            tools.join_path(BASE + ["qchem", f"run-{ATOM}", mol], endWithSlash=True)
-        )
-    with open(tools.join_path(BASE + ["inits", f"run-{ATOM}", molExt]), "r") as f:
+for mol_file in molecules:
+    mol = mol_file.split(".")[0]
+    molPath = qchem_path / mol
+    molPath.mkdir(exist_ok=True)
+
+    with open(base_path / "inits" / folder_name / mol_file, "r") as f:
         lines = f.read().split("\n")
         geometry = "\n".join(lines[2:])
 
-    create_qchem_input(BASE + ["qchem", f"run-{ATOM}", mol], geometry)
-    create_slurm_script(BASE + ["qchem", f"run-{ATOM}", mol])
+    create_qchem_input(qchem_path / mol, geometry)
+    create_slurm_script(qchem_path / mol)
