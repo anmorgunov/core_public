@@ -1,12 +1,12 @@
-import os
-from typing import Callable, Dict, Iterable, List, Set
+from pathlib import Path
+from typing import Callable, Dict, Iterable, List, Set, Tuple, Union, cast
 
 from openpyxl import load_workbook
 
-from . import constants
-from .Modules import LaTeX
-from .Modules.Extrapolation import AtomSchemeStatsType, SchemeStatsType
-from .Modules.Parser import (
+from Analysis import constants
+from Analysis.Modules import LaTeX
+from Analysis.Modules.Extrapolation import AtomStatsType, SchemeStatsType
+from Analysis.Modules.Parser import (
     AtomBasisStatsType,
     AtomDataType,
     BasisStatsType,
@@ -14,48 +14,33 @@ from .Modules.Parser import (
 )
 
 
-class SingleZetaResults:
+class CebeTable:
+    def _format(self, number: Union[int, float]) -> str:
+        return f"{number:.2f}"
+
+
+class SingleZetaResults(CebeTable):
+    # fmt:off
     basisToHeader = {
         "5": ["Molecule", "$\Delta$HF", "$\Delta$MP2", "Experiment"],
-        "Q": [
-            "Molecule",
-            "$\Delta$HF",
-            "$\Delta$MP2",
-            "$\Delta$CCSD",
-            "$\Delta$CCSD(T)",
-            "Experiment",
-        ],
-        "T": [
-            "Molecule",
-            "$\Delta$HF",
-            "$\Delta$MP2",
-            "$\Delta$MP3",
-            "$\Delta$CCSD",
-            "$\Delta$CCSD(T)",
-            "Experiment",
-        ],
-        "D": [
-            "Molecule",
-            "$\Delta$HF",
-            "$\Delta$MP2",
-            "$\Delta$MP3",
-            "$\Delta$CCSD",
-            "$\Delta$CCSD(T)",
-            "Experiment",
-        ],
+        "Q": ["Molecule", "$\Delta$HF", "$\Delta$MP2", "$\Delta$CCSD", "$\Delta$CCSD(T)", "Experiment"],
+        "T": ["Molecule", "$\Delta$HF", "$\Delta$MP2", "$\Delta$MP3", "$\Delta$CCSD", "$\Delta$CCSD(T)", "Experiment"],
+        "D": ["Molecule", "$\Delta$HF", "$\Delta$MP2", "$\Delta$MP3", "$\Delta$CCSD", "$\Delta$CCSD(T)", "Experiment"],
     }
+    # fmt:on
 
-    def __init__(self, atomToData: AtomDataType, molToExper: ExperDataType):
+    def __init__(
+        self, atomToData: AtomDataType, molToExper: ExperDataType, save_folder: Path
+    ) -> None:
         self.atomToData = atomToData
         self.molToExper = molToExper
-        self.f = lambda i: f"{i:.2f}"
+        self.save_folder = save_folder
 
-    def _render_mol(self, mol: str):
+    def _render_mol(self, mol: str) -> str:
         return constants.FNAME_TO_MOLS[mol]["latex"]
 
-    def collect_series(self, atom: str, basis: str):
-        body = []
-        f = self.f  # f stands for formatter
+    def collect_series(self, atom: str, basis: str) -> List[List[str]]:
+        body: List[List[str]] = []
         for molecule in sorted(self.atomToData[atom]):
             _data = self.atomToData[atom][molecule][basis]
             exp = self.molToExper[molecule]
@@ -72,11 +57,11 @@ class SingleZetaResults:
                 energies = [uhf, mp2, mp3, ccsd, ccsdt, exp]
 
             for e in energies:
-                row.append(f(e))
+                row.append(self._format(e))
             body.append(row)
         return body
 
-    def series_table(self, atom: str, basis: str, save_path: str):
+    def series_table(self, atom: str, basis: str, save_path: str) -> None:
         body = self.collect_series(atom, basis)
         caption = f"K-Edge Ionization Energies (in eV) of {atom}-Series in cc-pV{basis}Z/cc-pCV{basis}Z"
 
@@ -86,17 +71,17 @@ class SingleZetaResults:
             positioning="l " * len(self.basisToHeader[basis]),
             headers=self.basisToHeader[basis],
             body=body,
-            name=save_path,
+            save_path=save_path,
         )
 
-    def all_results(self, save_folder: str):
+    def all_results(self) -> None:
         for atom in self.atomToData.keys():
             for basis in "D T Q 5".split():
-                path = os.path.join(save_folder, f"{atom}-{basis}Z")
-                self.series_table(atom.lower(), basis, path)
+                path = self.save_folder / f"{atom}-{basis}Z.tex"
+                self.series_table(atom.lower(), basis, str(path))
 
 
-class MethodSummary:
+class MethodSummary(CebeTable):
     col_names = ["Basis", "Method", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
     basisToMethods = {
         "D": "UHF MP2 CCSD CCSD(T)".split(),
@@ -109,41 +94,41 @@ class MethodSummary:
         self,
         basisToStats: BasisStatsType,
         atomToBasisStats: AtomBasisStatsType,
-        save_folder: str,
+        save_folder: Path,
         show_sample_size: bool = True,
         isPublication: bool = False,
-    ):
+    ) -> None:
         self.basisToStats = basisToStats
         self.atomToBasisStats = atomToBasisStats
-        self.f = lambda i: f"{i:.2f}"
         self.save_folder = save_folder
         self.show_sample_size = show_sample_size
         self.isPublication = isPublication
 
-    def create_table_body(self, statsContainer: BasisStatsType, bases: List[str]):
-        def _me(x: str) -> str:
+    def create_table_body(
+        self, statsContainer: BasisStatsType, bases: List[str]
+    ) -> Tuple[List[List[str]], Set[int]]:
+        def _format_method(x: str) -> str:
             return f"$\Delta${x}" if x != "UHF" else "$\Delta$HF"
 
-        body = []
-        nSet = set()
-        f = self.f  # f stands for formatter
+        body: List[List[str]] = []
+        nSet: Set[int] = set()
         for basis in bases:
             if self.isPublication:
                 methods = self.basisToMethods[basis]
             else:
-                methods = statsContainer[basis]
+                methods = list(statsContainer[basis].keys())
             for method in methods:
                 stats = statsContainer[basis][method]
-                row = [basis, _me(method)]
+                row = [basis, _format_method(method)]
                 for key in "MSE MAE MedAE MaxAE STD(AE)".split():
-                    row.append(f(stats[key]))
+                    row.append(self._format(stats[key]))
                 if self.show_sample_size:
-                    row.append(stats["n"])
-                nSet.add(stats["n"])
+                    row.append(str(stats["n"]))
+                nSet.add(int(stats["n"]))
                 body.append(row)
         return body, nSet
 
-    def series_table(self, atom: str, bases: List[str], save_path: str):
+    def series_table(self, atom: str, bases: List[str], save_path: str) -> None:
         body, nSet = self.create_table_body(self.atomToBasisStats[atom], bases)
 
         if self.show_sample_size:
@@ -164,10 +149,10 @@ class MethodSummary:
             positioning="l " * len(header),
             headers=header,
             body=body,
-            name=save_path,
+            save_path=save_path,
         )
 
-    def all_table(self, bases: List[str], save_path: str):
+    def all_table(self, bases: List[str], save_path: str) -> None:
         body, nSet = self.create_table_body(self.basisToStats, bases)
 
         if self.show_sample_size:
@@ -187,58 +172,60 @@ class MethodSummary:
             positioning="l " * len(header),
             headers=header,
             body=body,
-            name=save_path,
+            save_path=save_path,
         )
 
-    def all_results(self):
+    def all_results(self) -> None:
         atoms = self.atomToBasisStats.keys()
         for atom in atoms:
-            # bases = self.atomToBasisStats[atom].keys()
-            bases = (
-                "D ccX-DZ pcX-1 T ccX-TZ pcX-2 Q ccX-QZ pcX-3 5 ccX-5Z pcX-4".split()
-            )
-            path = os.path.join(self.save_folder, f"{atom}-summary")
+            if self.isPublication:
+                bases = "D T Q 5".split()
+            else:
+                bases = "D ccX-DZ pcX-1 T ccX-TZ pcX-2 Q ccX-QZ pcX-3 5 ccX-5Z pcX-4".split()
+            path = str(self.save_folder / f"{atom}-summary.tex")
             self.series_table(atom.lower(), bases, path)
 
-        self.all_table(bases, os.path.join(self.save_folder, "all-summary"))
+        self.all_table(bases, str(self.save_folder / "all-summary.tex"))
 
 
-class ExtrapSchemeSummary:
+class ExtrapSchemeSummary(CebeTable):
     col_names = ["Basis", "Method", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
 
     def __init__(
         self,
         schemeToStats: SchemeStatsType,
-        atomToSchemeStats: AtomSchemeStatsType,
-        save_folder: str,
+        atomToSchemeStats: AtomStatsType,
+        save_folder: Path,
         show_sample_size: bool = True,
         isPublication: bool = False,
     ):
         self.schemeToStats = schemeToStats
         self.atomToSchemeStats = atomToSchemeStats
-        self.f = lambda i: f"{i:.2f}"
         self.save_folder = save_folder
         self.show_sample_size = show_sample_size
         self.isPublication = isPublication
 
     def create_table_body(
         self, statsContainer: SchemeStatsType, schemes: Iterable[str]
-    ):
-        body = []
-        nSet = set()
-        f = self.f  # f stands for formatter
+    ) -> Tuple[List[List[str]], Set[int]]:
+        body: List[List[str]] = []
+        nSet: Set[int] = set()
         for scheme in schemes:
             stats = statsContainer[scheme]
             row = [scheme]
             for key in "MSE MAE MedAE MaxAE STD(AE)".split():
-                row.append(f(stats[key]))
+                if not isinstance(stats[key], (int, float)):
+                    raise TypeError(
+                        f"Expected a int/float for {key=}, received {type(key)=} instead"
+                    )
+                row.append(self._format(cast(Union[int, float], stats[key])))
             if self.show_sample_size:
-                row.append(stats["n"])
-            nSet.add(stats["n"])
+                row.append(str(stats["n"]))
+            nSet.add(int(stats["n"]))
             body.append(row)
         return body, nSet
 
-    def series_table(self, atom: str, schemes: Iterable[str], save_path: str):
+    def series_table(self, atom: str, schemes: Iterable[str], save_path: str) -> None:
         body, nSet = self.create_table_body(self.atomToSchemeStats[atom], schemes)
 
         if self.show_sample_size:
@@ -259,10 +246,10 @@ class ExtrapSchemeSummary:
             positioning="l " * len(header),
             headers=header,
             body=body,
-            name=save_path,
+            save_path=save_path,
         )
 
-    def all_table(self, schemes: Iterable[str], save_path: str):
+    def all_table(self, schemes: Iterable[str], save_path: str) -> None:
         body, nSet = self.create_table_body(self.schemeToStats, schemes)
 
         if self.show_sample_size:
@@ -282,32 +269,32 @@ class ExtrapSchemeSummary:
             positioning="l " * len(header),
             headers=header,
             body=body,
-            name=save_path,
+            save_path=save_path,
         )
 
-    def results_for_schemes(self, scheme_factory: Callable):
+    def results_for_schemes(self, scheme_factory: Callable[[], Iterable[str]]) -> None:
         atoms = "C N O F".split()
         for atom in atoms:
-            path = os.path.join(self.save_folder, f"{atom}-summary")
+            path = str(self.save_folder / f"{atom}-summary.tex")
             self.series_table(atom.lower(), scheme_factory(), path)
-        self.all_table(scheme_factory(), os.path.join(self.save_folder, "all-summary"))
+        self.all_table(scheme_factory(), str(self.save_folder / "all-summary.tex"))
 
 
 class UsedGeometries:
 
-    def __init__(self, geom_wb: str, save_folder: str):
+    def __init__(self, geom_wb: str, save_folder: Path) -> None:
         self.geom_wb = load_workbook(geom_wb)
         self.save_folder = save_folder
 
-    def _get_formula(self, mol: str):
+    def _get_formula(self, mol: str) -> str:
         return constants.FNAME_TO_MOLS[mol]["formula"]
 
-    def _render_mol(self, mol: str):
+    def _render_mol(self, mol: str) -> str:
         return constants.FNAME_TO_MOLS[mol]["latex"]
 
-    def parse_geometries(self, relevantMols: Dict[str, Set[str]]):
-        methodToAtomToMols = {}
-        methodToBasisToMols = {}
+    def parse_geometries(self, relevantMols: Dict[str, Set[str]]) -> None:
+        methodToAtomToMols: Dict[str, Dict[str, Dict[str, List[str]]]] = {}
+        methodToBasisToMols: Dict[str, Dict[str, List[str]]] = {}
         ws = self.geom_wb["Sheet1"]
         row = 2
         while True:
@@ -336,21 +323,21 @@ class UsedGeometries:
             methodToAtomToMols.setdefault(method, {}).setdefault(atom, {}).setdefault(
                 basis, []
             ).append(molecule)
-            methodToBasisToMols.setdefault(method, {}).setdefault(basis, set()).add(
+            methodToBasisToMols.setdefault(method, {}).setdefault(basis, []).append(
                 self._get_formula(molecule)
             )
             row += 1
         self.methodToAtomToBasisToMols = methodToAtomToMols
         self.methodToBasisToMols = methodToBasisToMols
 
-    def summary(self, save_path: str):
+    def summary(self, save_path: str) -> None:
         mols = list(sorted(self.methodToBasisToMols["exp"]["exp"]))
         self.methodToBasisToMols.setdefault("exp1", {})["exp1"] = mols[: len(mols) // 2]
         self.methodToBasisToMols.setdefault("exp2", {})["exp2"] = mols[len(mols) // 2 :]
         caption = "Molecules for which experimental geometries were available"
         header = ["exp1", "exp2", "MP2(Full)", "RI-MP2"]
         positioning = "p{0.30\linewidth} | p{0.30\linewidth} | p{0.30\linewidth} | p{0.30\linewidth}"
-        body = []
+        body: List[List[str]] = []
         for j, method in enumerate(header):
             i = 0
             for basis in self.methodToBasisToMols[method]:
@@ -384,10 +371,9 @@ class UsedGeometries:
             positioning=positioning,
             headers=header,
             body=body,
-            name=save_path,
+            save_path=save_path,
         )
 
-    def main(self, relevantMols: Dict[str, Set[str]]):
+    def main(self, relevantMols: Dict[str, Set[str]]) -> None:
         self.parse_geometries(relevantMols)
-        path = os.path.join(self.save_folder, "geom-summary")
-        self.summary(path)
+        self.summary(str(self.save_folder / "geom-summary.tex"))

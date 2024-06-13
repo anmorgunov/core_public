@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Set, TypedDict, cast
+from typing import Dict, List, Literal, Optional, Set, TypedDict, Union, cast
 
 import numpy as np
 from openpyxl import Workbook, load_workbook
@@ -50,7 +50,7 @@ AlgoErrorsType = Dict[str, BasisErrorsType]
 AtomErrorsType = Dict[str, BasisErrorsType]
 AlgoAtomErrorsType = Dict[str, AtomErrorsType]
 
-StatsType = Dict[str, float]
+StatsType = Dict[str, Union[float, int]]
 MethodStatsType = Dict[str, StatsType]
 BasisStatsType = Dict[str, MethodStatsType]
 AlgoStatsType = Dict[str, BasisStatsType]

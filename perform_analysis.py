@@ -1,6 +1,7 @@
 import pprint
 from pathlib import Path
 
+from Analysis import CreateTables, constants
 from Analysis.Modules import Parser
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -38,7 +39,7 @@ fname = "o-series"  # specify the file name to which this will be saved
 # eobj = Extrapolation.WholeDataset()
 
 # # First, let's filter out the molecules we want to use
-# ATOM_TO_MOLS = constants.ATOM_TO_MOLS
+ATOM_TO_MOLS = constants.ATOM_TO_MOLS
 # excludeAtomToMols = {
 #     "C": set("c-o ch3-c-o2h".split()),
 #     "N": set(
@@ -47,16 +48,16 @@ fname = "o-series"  # specify the file name to which this will be saved
 #     "O": set("cf3co-o-h cf3c-o-oh ch3co-o-ch3 ch3c-o-och3 ".split()),
 #     "F": set("cf3ocf3".split()),
 # }
-# atomToMols = {
-#     atom.lower(): set(ATOM_TO_MOLS[atom]) - excludeAtomToMols[atom]
-#     for atom in ATOM_TO_MOLS
-# }
-# # atomToMols = ATOM_TO_MOLS
+atomToMols = {
+    atom.lower(): set(ATOM_TO_MOLS[atom])  # - excludeAtomToMols[atom]
+    for atom in ATOM_TO_MOLS
+}
+# atomToMols = ATOM_TO_MOLS
 # # atomToMols = constants.ATOM_PARTITIONED['big']
 # # atomToMols['o'] = atomToMols['o']-constants.ATOM_PARTITIONED['small']['o']
 
-# filteredData = pobj.filter_data_by_molecules(pobj.algoToData, atomToMols)
-# filteredData = pobj.filter_by_presence_of_experimental(filteredData)
+filteredData = pobj.filter_data_by_molecules(pobj.algoToData, atomToMols)
+filteredData = pobj.filter_by_presence_of_experimental(filteredData)
 
 # # ---------------------------------------
 # # atomToExper = {}
@@ -117,8 +118,12 @@ fname = "o-series"  # specify the file name to which this will be saved
 
 # # --------------- CREATE TABLES ---------------
 
-# table1 = CreateTables.SingleZetaResults(filteredData["mom"], pobj.molToExper)
-# table1.all_results(save_folder=os.path.join(DATA_PATH, "paper-tables", "single-zeta"))
+table1 = CreateTables.SingleZetaResults(
+    atomToData=filteredData["mom"],
+    molToExper=pobj.molToExper,
+    save_folder=DATA_PATH / "paper-tables" / "single-zeta",
+)
+table1.all_results()
 
 # table2 = CreateTables.MethodSummary(
 #     pobj.algoToStats["mom"],
