@@ -1,4 +1,4 @@
-ATOM_TO_MOLS = {
+atom_mols_list = {
     "C": "c-cl2h2 c-cl3h c-cl4 c-clh3 c-f2h2 c-f3h c-f4 c-fh3 c-h3cch c-h3cn ch3-c-n c-h3nc c-h3oh c-h4 c-o2 h2c-c-ch2 h-c-o2ch3 c2-h2 c2-h4 c2-h6 c2h6-c-o c-h2o ch3-c-ho ch3-c-o2h c-o c-h3och3".split(),  # ch3n-c n-c-cn h-c-n
     "N": "c2h5nh2 ch3nh2 ch3nhch3 ch3x3n hcn hconh2 hno2 hno3 nfh2 nh3 nonh2 pyrrole n2h4 pyridine".split()
     + " c2h5c-n ch2chc-n ch3sc-n h-n-co h2n-c2h4oh h2n-cho hco-n-hch3 h2n-conh2 n-cch2cn".split()
@@ -8,6 +8,7 @@ ATOM_TO_MOLS = {
     "F": "c2h3f c2h5f c3h7f ch3cof ch3nhcof ch3nhf ch3of foh hccf hoch2f nh2ch2f nh2f ch3f chf3 ch2f2 cf4 f2 c5h5f".split()
     + " hf pf3 cf3chch2 cf3cch bf3 cf3ocf3".split(),  # c2f4
 }
+ATOM_TO_MOLS = {atom: set(mols) for atom, mols in atom_mols_list.items()}
 
 # fmt:off
 FNAME_TO_MOLS={
@@ -136,6 +137,14 @@ EXTRAPOLATION_OPTIONS = {
     "MP2": mp2_opts.split(", "),
     "MP2+Corr": mp2corr_opts.split(", "),
 }
+# excludeAtomToMols = {
+#     "C": set("c-o ch3-c-o2h".split()),
+#     "N": set(
+#         "mnh2pyridi-n-e onh2pyridi-n-e o-n-h2pyridine m-n-h2pyridine pfpyridine".split()
+#     ),
+#     "O": set("cf3co-o-h cf3c-o-oh ch3co-o-ch3 ch3c-o-och3 ".split()),
+#     "F": set("cf3ocf3".split()),
+# }
 
 if __name__ == "__main__":
     d = {}

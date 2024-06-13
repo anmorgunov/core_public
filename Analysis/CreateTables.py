@@ -5,7 +5,7 @@ from openpyxl import load_workbook
 
 from Analysis import constants
 from Analysis.Modules import LaTeX
-from Analysis.Modules.Extrapolation import AtomStatsType, SchemeStatsType
+from Analysis.Modules.Extrapolation import AtomStatsType, SchemeStatsType, StatsKeyType
 from Analysis.Modules.Parser import (
     AtomBasisStatsType,
     AtomDataType,
@@ -214,11 +214,7 @@ class ExtrapSchemeSummary(CebeTable):
             stats = statsContainer[scheme]
             row = [scheme]
             for key in "MSE MAE MedAE MaxAE STD(AE)".split():
-                if not isinstance(stats[key], (int, float)):
-                    raise TypeError(
-                        f"Expected a int/float for {key=}, received {type(key)=} instead"
-                    )
-                row.append(self._format(cast(Union[int, float], stats[key])))
+                row.append(self._format(cast(float, stats[cast(StatsKeyType, key)])))
             if self.show_sample_size:
                 row.append(str(stats["n"]))
             nSet.add(int(stats["n"]))

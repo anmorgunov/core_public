@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List, Optional, Tuple, TypedDict, cast
+from typing import Dict, Iterable, List, Literal, Optional, Tuple, TypedDict, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -7,6 +7,7 @@ import scipy.optimize
 from Analysis.Modules.Parser import DataPointType, LitKeyType, allowed_methods
 
 # fmt:off
+StatsKeyType = Literal["MSE", "MAE", "MedAE", "MaxAE", "STD(AE)", "n", "errors", "abs_errors"]
 StatsType = TypedDict('StatsType', {"MSE":float, "MAE":float, "MedAE": float, "MaxAE": float, "STD(AE)":float, "n": int, "errors": npt.NDArray[np.float64], "abs_errors":npt.NDArray[np.float64]})
 # fmt:on
 ExperDataType = Dict[str, float]
