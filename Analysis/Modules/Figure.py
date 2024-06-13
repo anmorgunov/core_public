@@ -17,6 +17,7 @@ class Styler:
         self.TICK_SIZE = 14
         self.AXIS_TITLE_SIZE = 18
         self.ANNOTATION_SIZE = 14
+        self.LEGEND_SIZE = 14
 
     def _update_fig(self, figure: go.Figure, title: str = "") -> None:
         """A wrapper function with common settings for Figure object from plotly

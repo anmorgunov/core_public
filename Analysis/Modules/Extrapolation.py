@@ -1,26 +1,13 @@
-from typing import (
-    Dict,
-    Iterable,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import Dict, Iterable, List, Optional, Tuple, TypedDict, cast
 
 import numpy as np
 import numpy.typing as npt
 import scipy.optimize
 
+from Analysis.Modules.Parser import DataPointType, LitKeyType, allowed_methods
+
 # fmt:off
-allowed_methods = {"HF", "UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT"}
-LitKeyType = Literal["Frozen orbitals", "Swapped orbitals", "T1 for RHF", "T1 for UHF(a)", "T1 for UHF(b)", "UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT", "error", "detailed"]
-DataPointType = TypedDict(
-    "DataPointType", {"Frozen orbitals": str, "Swapped orbitals": str, "UHF": float, "MP2": float, "MP2.5": float, "MP3": float, "CCSD": float, "CCSD(T)": float, "CCSDT": float, "T1 for RHF": str, "T1 for UHF(a)": str, "T1 for UHF(b)": str, "error": str, "detailed": str,},
-    total=False,
-)
+StatsType = TypedDict('StatsType', {"MSE":float, "MAE":float, "MedAE": float, "MaxAE": float, "STD(AE)":float, "n": int, "errors": npt.NDArray[np.float64], "abs_errors":npt.NDArray[np.float64]})
 # fmt:on
 ExperDataType = Dict[str, float]
 # DataPointType = Dict[str, Union[str, float]]
@@ -45,7 +32,6 @@ AlgoErrsType = Dict[str, SchemeErrsType]
 AtomErrsType = Dict[str, SchemeErrsType]
 AlgoAtomErrsType = Dict[str, AtomErrsType]
 
-StatsType = Dict[str, Union[int, float, npt.NDArray[np.float64]]]
 SchemeStatsType = Dict[str, StatsType]
 AlgoStatsType = Dict[str, SchemeStatsType]
 AtomStatsType = Dict[str, SchemeStatsType]
