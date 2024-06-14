@@ -1,4 +1,22 @@
-GEN_CONFIG = dict(
+from typing import TypedDict
+
+ConfigType = TypedDict(
+    "ConfigType",
+    {
+        "doMP2": bool,
+        "doMP3": bool,
+        "doCCSD": bool,
+        "doTriples": bool,
+        "doSFX": bool,
+        "toFreeze": bool,
+        "doChengBasis": bool,
+        "doSpecialBasis": bool,
+        "basisLibKey": str,
+        "toPrintDensity": bool,
+    },
+)
+
+GEN_CONFIG: ConfigType = dict(
     doMP2=True,
     doMP3=False,
     doCCSD=True,
@@ -10,11 +28,19 @@ GEN_CONFIG = dict(
     basisLibKey="6-311+G(3df)",
     toPrintDensity=False,
 )
-Q_CONFIG = dict(
-    doMP3=False,
+
+Q_CONFIG: ConfigType = dict(**GEN_CONFIG)
+Q_CONFIG["doMP3"] = False
+
+PENTUPLE_CONFIG: ConfigType = dict(**GEN_CONFIG)
+PENTUPLE_CONFIG.update(
+    {
+        "doMP3": False,
+        "doCCSD": False,
+        "doTriples": False,
+    }
 )
-PENTUPLE_CONFIG = dict(doMP3=False, doCCSD=False, doTriples=False)
-TEST_CONFIG = dict(
+TEST_CONFIG: ConfigType = dict(
     doMP2=False,
     doMP3=False,
     doCCSD=False,
@@ -26,7 +52,7 @@ TEST_CONFIG = dict(
     basisLibKey="6-311+G(3df)",
     toPrintDensity=False,
 )
-LOCAL_CONFIG = dict(
+LOCAL_CONFIG: ConfigType = dict(
     doMP2=True,
     doMP3=False,
     doCCSD=False,
@@ -39,7 +65,7 @@ LOCAL_CONFIG = dict(
     toPrintDensity=False,
 )
 
-MP3_CONFIG = dict(
+MP3_CONFIG: ConfigType = dict(
     doMP2=True,
     doMP3=True,
     doCCSD=False,

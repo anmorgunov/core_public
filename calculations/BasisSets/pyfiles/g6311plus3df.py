@@ -1,6 +1,5 @@
 BASIS_SET = {
-    "H": {
-        "reg": """BASIS "ao basis" SPHERICAL PRINT
+    "H": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (5s) -> [5s]
 H    S
      33.86500                1.00000000E+00
@@ -13,10 +12,7 @@ H    S
 H    S
       0.102741               1.00000000E+00
 END""",
-        "core": """""",
-    },
-    "C": {
-        "reg": """BASIS "ao basis" SPHERICAL PRINT
+    "C": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (12s,6p,3d,1f) -> [12s,6p,3d,1f]
 C    S
    4563.240                  1.00000000E+00
@@ -51,10 +47,7 @@ C    D
 C    F
       0.8000000              1.00000000E+00
 END""",
-        "core": """""",
-    },
-    "N": {
-        "reg": """BASIS "ao basis" SPHERICAL PRINT
+    "N": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (12s,6p,3d,1f) -> [12s,6p,3d,1f]
 N    S
    6293.480                  1.00000000E+00
@@ -89,10 +82,7 @@ N    D
 N    F
       1.0000000              1.00000000E+00
 END""",
-        "core": """""",
-    },
-    "O": {
-        "reg": """BASIS "ao basis" SPHERICAL PRINT
+    "O": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (12s,6p,3d,1f) -> [12s,6p,3d,1f]
 O    S
    8588.500                  1.00000000E+00
@@ -127,10 +117,7 @@ O    D
 O    F
       1.4000000              1.00000000E+00
 END""",
-        "core": """""",
-    },
-    "F": {
-        "reg": """BASIS "ao basis" SPHERICAL PRINT
+    "F": """BASIS "ao basis" SPHERICAL PRINT
 #BASIS SET: (12s,6p,3d,1f) -> [12s,6p,3d,1f]
 F    S
   11427.10                   1.00000000E+00
@@ -165,6 +152,4 @@ F    D
 F    F
       1.8500000              1.00000000E+00
 END""",
-        "core": """""",
-    },
 }
