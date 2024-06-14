@@ -1,54 +1,62 @@
+from typing import Dict, List
+
+
 class ParamParser:
-    """This is an object that's responsible for parsing launch_parameters.txt. Currently it's only used as a secondary tool in "generate_bash.py"
-    """
+    """This is an object that's responsible for parsing launch_parameters.txt. Currently it's only used as a secondary tool in "generate_bash.py" """
 
-    def __init__(self):
-        """Initialize an object and read lines from "launch_parameters.txt"
-        """
-        # with open(tools.join_path(PRIVATE.BASE_PATH + ["calculations", 'launch_parameters.txt']), 'r') as f:
-        with open('launch_parameters.txt', 'r') as f:
+    def __init__(self) -> None:
+        """Initialize an object and read lines from "launch_parameters.txt" """
+        with open("launch_parameters.txt", "r") as f:
             self.lines = f.readlines()
-        self.launchParams = []
+        self.launch_params: List[Dict[str, str]] = []
 
-        
-    def _parse(self):
-        """The main workhorse for parsing launch_parameters.py
-        """        
+    def _parse(self) -> None:
+        """The main workhorse for parsing launch_parameters.py"""
         endIndex = None
-        for i, rline in enumerate(self.lines): #for each line in launch_parameters.txt
-            line = rline.strip() # remove newline character
-            if line == 'END': # if we're at the end of a block, just continue iterating
+        for i, rline in enumerate(self.lines):
+            line = rline.strip()
+            if line == "END":
                 continue
 
-            if not line or line[0] == '#': #if an empty line or line starts with a # we ignore it
+            if not line or line[0] == "#":
                 continue
 
-            if line == 'START': #if we found a line that says "START", we start parsing
-                for j in range(i, len(self.lines)): #first, let's find how long is the block
-                    if self.lines[j].rstrip() == 'END':
+            if line == "START":
+                for j in range(i, len(self.lines)):
+                    # first, let's find how long is the block
+                    if self.lines[j].rstrip() == "END":
                         endIndex = j
                         break
-                assert endIndex is not None, "Launch_parameters.txt contains a block without END" # the block must end somewhere
+                if endIndex is None:
+                    raise SyntaxError(
+                        "launch_parameters.txt contains a block without END"
+                    )
+                param_dict = {}
+                for paramIndex in range(i + 1, endIndex):
+                    keyword, value = self.lines[paramIndex].rstrip().split(": ")
+                    param_dict[keyword] = value
 
-                launchParamSet = {}
-                for paramIndex in range(i+1, endIndex): # parse each line between START and END 
-                    keyword, value = self.lines[paramIndex].rstrip().split(': ')
-                    launchParamSet[keyword] = value
-                
-                assert 'atom' in launchParamSet, 'You must specify an atom on which a core orbital will be ionized'
-                assert 'mols' in launchParamSet or 'mols(loc)' in launchParamSet, 'You must provide at least one molecule for calculations'
-                self.launchParams.append(launchParamSet)
+                if "atom" not in param_dict:
+                    raise SyntaxError(
+                        "You must specify an atom on which a core orbital will be ionized"
+                    )
+                if "mols" not in param_dict and "mols(loc)" not in param_dict:
+                    raise SyntaxError(
+                        "You must provide at least one molecule for calculations"
+                    )
+                self.launch_params.append(param_dict)
 
-    def main(self):
+    def main(self) -> List[Dict[str, str]]:
         """As of now, this is essentially a proxy for getting self.launchParams
 
         Returns:
-            list: a list of dictionaries that specify parameters for a job 
+            list: a list of dictionaries that specify parameters for a job
         """
-        self._parse() 
-        return self.launchParams
+        self._parse()
+        return self.launch_params
+
 
 if __name__ == "__main__":
     parser = ParamParser()
     parser.main()
-    print(parser.launchParams)
+    print(parser.launch_params)
