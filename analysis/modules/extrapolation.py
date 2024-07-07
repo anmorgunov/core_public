@@ -3,6 +3,7 @@ from typing import Dict, Iterable, List, Literal, Optional, Tuple, TypedDict, ca
 import numpy as np
 import numpy.typing as npt
 import scipy.optimize
+
 from analysis.modules.parsers import DataPointType, LitKeyType, allowed_methods
 
 # fmt:off
