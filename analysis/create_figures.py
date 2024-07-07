@@ -5,10 +5,10 @@ import numpy.typing as npt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from Analysis import figureSpecs
-from Analysis.Modules.Extrapolation import AtomCBSType, AtomStatsType, SchemeStatsType
-from Analysis.Modules.Figure import Styler
-from Analysis.Modules.Parser import AtomBasisStatsType, BasisStatsType
+from analysis import figure_specs
+from analysis.modules.extrapolation import AtomCBSType, AtomStatsType, SchemeStatsType
+from analysis.modules.figure import Styler
+from analysis.modules.parsers import AtomBasisStatsType, BasisStatsType
 
 Number = Union[int, float]
 
@@ -57,10 +57,10 @@ def method_error_bars_general(basisStats: BasisStatsType, save_path: str) -> go.
     bases = "D T Q 5".split()
     labels = "cc-pCVDZ<br>/cc-pVDZ cc-pCVTZ<br>/cc-pVTZ cc-pCVQZ<br>/cc-pVQZ cc-pCV5Z<br>/cc-pV5Z".split()
 
-    for i, method in enumerate(figureSpecs.METHOD_TO_BASIS):
+    for i, method in enumerate(figure_specs.METHOD_TO_BASIS):
         yVals, yErrs = [], []
         for basis in bases:
-            if basis not in figureSpecs.METHOD_TO_BASIS[method]:
+            if basis not in figure_specs.METHOD_TO_BASIS[method]:
                 continue
             meanAE = basisStats[basis][method]["MAE"]
             std = basisStats[basis][method]["STD(AE)"]
@@ -121,10 +121,10 @@ def method_error_bars_series(
     for j, atom in enumerate(atoms):
         showLegend = True if j == 0 else False
         basisToStats = atomToBasisStats[atom]
-        for i, method in enumerate(figureSpecs.METHOD_TO_BASIS):
+        for i, method in enumerate(figure_specs.METHOD_TO_BASIS):
             yVals, yErrs = [], []
             for basis in bases:
-                if basis not in figureSpecs.METHOD_TO_BASIS[method]:
+                if basis not in figure_specs.METHOD_TO_BASIS[method]:
                     continue
                 meanAE = basisToStats[basis][method]["MAE"]
                 std = basisToStats[basis][method]["STD(AE)"]
@@ -259,9 +259,9 @@ def extrap_err_bars_summary(
     styler.TICK_SIZE = 20
     styler.AXIS_TITLE_SIZE = 22
     if include5:
-        atomToNames = figureSpecs.errBarrSummary_w5
+        atomToNames = figure_specs.errBarrSummary_w5
     else:
-        atomToNames = figureSpecs.errBarSummary_no5
+        atomToNames = figure_specs.errBarSummary_no5
 
     # fmt:off
     labels = ["MP2[∞]", "MP2[∞]<br>+δ(STO-3G)", "MP2[∞]<br>+δ(3-21G)", "MP2[∞]<br>+δ(D)", "CCSD[∞]"]  # fmt:on
@@ -307,9 +307,9 @@ def extrap_err_bars_atom_summary(
     styler.TICK_SIZE = 12
     styler.AXIS_TITLE_SIZE = 14
     if include5:
-        atomToNames = figureSpecs.errBarrSummary_w5
+        atomToNames = figure_specs.errBarrSummary_w5
     else:
-        atomToNames = figureSpecs.errBarSummary_no5
+        atomToNames = figure_specs.errBarSummary_no5
 
     # fmt:off
     labels = ["MP2[∞]", "MP2[∞]<br>+δ(STO-3G)", "MP2[∞]<br>+δ(3-21G)", "MP2[∞]<br>+δ(D)", "CCSD[∞]"]  # fmt:on
@@ -362,9 +362,9 @@ def benefit_of_extrapolation_over_special_basis_series(
     styler.TICK_SIZE = 12
     styler.AXIS_TITLE_SIZE = 14
     if include5:
-        atomToNames = figureSpecs.extrapOrNot_w5
+        atomToNames = figure_specs.extrapOrNot_w5
     else:
-        atomToNames = figureSpecs.extrapOrNot_no5
+        atomToNames = figure_specs.extrapOrNot_no5
 
     # fmt:off
     labels = ["MP2[∞]<br>+δ(D)", "CCSD[∞]", "CCSD[pcX-1]", "CCSD[ccX-DZ]"]  # fmt:on
@@ -416,9 +416,9 @@ def benefit_of_extrapolation_over_special_basis_overall(
     styler.TICK_SIZE = 12
     styler.AXIS_TITLE_SIZE = 14
     if include5:
-        atomToNames = figureSpecs.extrapOrNot_w5
+        atomToNames = figure_specs.extrapOrNot_w5
     else:
-        atomToNames = figureSpecs.extrapOrNot_no5
+        atomToNames = figure_specs.extrapOrNot_no5
 
     # fmt:off
     labels = ["MP2[∞]<br>+δ(D)", "CCSD[∞]", "CCSD[pcX-1]", "CCSD[ccX-DZ]"]  # fmt:on
@@ -470,7 +470,7 @@ def small_basis_study_subplots(
         vertical_spacing=0.08,
         horizontal_spacing=0.07,
     )
-    atomToNames = figureSpecs.smallBasisStudy
+    atomToNames = figure_specs.smallBasisStudy
     labels = ["MP2[∞]", "+STO-3G", "+STO-6G", "+3-21G", "+4-31G", "+6-31G", "+D"]
     colorscale = ["#9d4edd"] * (len(atomToNames["c"]) + 1)
     for j, atom in enumerate(atomToNames):
@@ -524,7 +524,7 @@ def big_basis_study_subplots(
         horizontal_spacing=0.07,
     )
 
-    atomToNames = figureSpecs.bigBasisStudy
+    atomToNames = figure_specs.bigBasisStudy
     colorscale = ["#9d4edd"] * (len(atomToNames["c"]) + 1)
     labels = [
         "MP2[D T Q]",
@@ -672,10 +672,10 @@ def correlate_extrapolation_summary(
     styler.TITLE_SIZE = 12
     atoms = ["c", "n", "o", "f"]
     if include5:
-        atomToNames = figureSpecs.corrSummary["do5"]
+        atomToNames = figure_specs.corrSummary["do5"]
         suffix = "-with5-detail"
     else:
-        atomToNames = figureSpecs.corrSummary["no5"]
+        atomToNames = figure_specs.corrSummary["no5"]
         suffix = "-no5-detail"
 
     fig = make_subplots(
@@ -690,7 +690,7 @@ def correlate_extrapolation_summary(
             for molecule, nameToCBS in atomToMolCBS[atom].items():
                 nameX = atomToNames[atom][j][0]
                 nameY = atomToNames[atom][j][1]
-                if molecule in figureSpecs.corrSmBasisException:
+                if molecule in figure_specs.corrSmBasisException:
                     continue
                 if (x := nameToCBS[nameX]["cbs+corr"]) is None:
                     raise TypeError(

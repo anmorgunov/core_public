@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 import scipy.optimize
 
-from Analysis.Modules.Parser import DataPointType, LitKeyType, allowed_methods
+from analysis.modules.parsers import DataPointType, LitKeyType, allowed_methods
 
 # fmt:off
 StatsKeyType = Literal["MSE", "MAE", "MedAE", "MaxAE", "STD(AE)", "n", "errors", "abs_errors"]

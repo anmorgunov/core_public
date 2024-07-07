@@ -3,10 +3,10 @@ from typing import Callable, Dict, Iterable, List, Set, Tuple, Union, cast
 
 from openpyxl import load_workbook
 
-from Analysis import constants
-from Analysis.Modules import LaTeX
-from Analysis.Modules.Extrapolation import AtomStatsType, SchemeStatsType, StatsKeyType
-from Analysis.Modules.Parser import (
+from analysis import constants
+from analysis.modules import latex
+from analysis.modules.extrapolation import AtomStatsType, SchemeStatsType, StatsKeyType
+from analysis.modules.parsers import (
     AtomBasisStatsType,
     AtomDataType,
     BasisStatsType,
@@ -65,7 +65,7 @@ class SingleZetaResults(CebeTable):
         body = self.collect_series(atom, basis)
         caption = f"K-Edge Ionization Energies (in eV) of {atom}-Series in cc-pV{basis}Z/cc-pCV{basis}Z"
 
-        LaTeX.Table.export_table(
+        latex.Table.export_table(
             caption=caption,
             label=f"{atom.lower()}-{basis.lower()}z",
             positioning="l " * len(self.basisToHeader[basis]),
@@ -153,7 +153,7 @@ class MethodSummary(CebeTable):
             f"Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom.upper()}-series"
             + suffix
         )
-        LaTeX.Table.export_table(
+        latex.Table.export_table(
             caption=caption,
             label=f"method-summary-{atom.lower()}",
             positioning="l " * len(header),
@@ -176,7 +176,7 @@ class MethodSummary(CebeTable):
             "Statistical analysis of accuracy of different methods at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points"
             + suffix
         )
-        LaTeX.Table.export_table(
+        latex.Table.export_table(
             caption=caption,
             label="method-all-summary",
             positioning="l " * len(header),
@@ -249,7 +249,7 @@ class ExtrapSchemeSummary(CebeTable):
             f"Statistical analysis of accuracy of different extrapolation schemes at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom.upper()}-series"
             + suffix
         )
-        LaTeX.Table.export_table(
+        latex.Table.export_table(
             caption=caption,
             label=f"extrap-scheme-summary-{atom.lower()}",
             positioning="l " * len(header),
@@ -272,7 +272,7 @@ class ExtrapSchemeSummary(CebeTable):
             "Statistical analysis of accuracy of different extrapolation schemes at predicting K-Edge CEBEs (in eV) compared to experimental data for all data points"
             + suffix
         )
-        LaTeX.Table.export_table(
+        latex.Table.export_table(
             caption=caption,
             label="extrap-all-summary",
             positioning="l " * len(header),
@@ -374,7 +374,7 @@ class UsedGeometries:
                         body[i].append(" ")
                         i += 1
 
-        LaTeX.Table.export_table(
+        latex.Table.export_table(
             caption=caption,
             label="geom-summary",
             positioning=positioning,

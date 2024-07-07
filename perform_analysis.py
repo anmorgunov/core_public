@@ -3,8 +3,8 @@ import pprint
 from pathlib import Path
 from typing import Dict
 
-from Analysis import CreateFigures, CreateTables, Timing, constants
-from Analysis.Modules import Extrapolation, Parser
+from analysis import constants, create_figures, create_tables, timing
+from analysis.modules import extrapolation, parsers
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -14,7 +14,7 @@ TABLE_PATH = DATA_PATH / "paper-tables"
 FIGURE_PATH = DATA_PATH / "paper-figures"
 
 # --------------- PERFORM PARSING ---------------
-pobj = Parser.ParsedData(
+pobj = parsers.ParsedData(
     experimental_wb=str(DATA_PATH / "experimental.xlsx"),
     calculations_wb=str(DATA_PATH / "CEBE_Data.xlsx"),
     algorithms=["mom"],
@@ -59,7 +59,7 @@ pobj.calculate_series_statistics()
 pobj.calculate_overall_statistics()
 
 
-eobj = Extrapolation.WholeDataset()
+eobj = extrapolation.WholeDataset()
 eobj._create_extrapolation_schemes()
 eobj.debug = False
 eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["HF"])
@@ -72,14 +72,14 @@ eobj.calculate_overall_statistics()
 
 # --------------- CREATE TABLES ---------------
 
-table1 = CreateTables.SingleZetaResults(
+table1 = create_tables.SingleZetaResults(
     atomToData=filteredData["mom"],
     molToExper=pobj.molToExper,
     save_folder=TABLE_PATH / "single-zeta",
 )
 table1.all_results()
 
-table2 = CreateTables.MethodSummary(
+table2 = create_tables.MethodSummary(
     pobj.algoToStats["mom"],
     pobj.algoToAtomStats["mom"],
     save_folder=TABLE_PATH / "method-summaries",
@@ -88,7 +88,7 @@ table2 = CreateTables.MethodSummary(
 )
 table2.all_results()
 
-table3 = CreateTables.ExtrapSchemeSummary(
+table3 = create_tables.ExtrapSchemeSummary(
     eobj.algoToStats["mom"],
     eobj.algoToAtomStats["mom"],
     save_folder=TABLE_PATH / "extrap-summaries",
@@ -99,7 +99,7 @@ table3 = CreateTables.ExtrapSchemeSummary(
 eobj._schemeIterKeys = ["HF", "CCSD", "MP2"]
 table3.results_for_schemes(scheme_factory=eobj.scheme_generator)
 
-table4 = CreateTables.UsedGeometries(
+table4 = create_tables.UsedGeometries(
     geom_wb=str(DATA_PATH / "geometriesDB.xlsx"),
     save_folder=TABLE_PATH / "geometries",
 )
@@ -110,25 +110,25 @@ relevantMols = {
 table4.main(relevantMols)
 
 # # --------------- CREATE FIGURES ---------------
-CreateFigures._manual_delay()
+create_figures._manual_delay()
 
 figures_path = str(FIGURE_PATH)
-CreateFigures.method_error_bars_general(pobj.algoToStats["mom"], figures_path)
-CreateFigures.method_error_bars_series(
+create_figures.method_error_bars_general(pobj.algoToStats["mom"], figures_path)
+create_figures.method_error_bars_series(
     atomToBasisStats=pobj.algoToAtomStats["mom"],
     bases="D T Q 5".split(),
     x_labels="cc-pCVDZ<br>/cc-pVDZ cc-pCVTZ<br>/cc-pVTZ cc-pCVQZ<br>/cc-pVQZ cc-pCV5Z<br>/cc-pV5Z".split(),
     save_path=figures_path,
     fname_suffix="_ccReg",
 )
-CreateFigures.method_error_bars_series(
+create_figures.method_error_bars_series(
     atomToBasisStats=pobj.algoToAtomStats["mom"],
     bases="pcX-1 pcX-2 pcX-3 pcX-4".split(),
     x_labels="pcX-1<br>/pc-1 pcX-2<br>/pc-2 pcX-3<br>/pc-3 pcX-4<br>/pc-4".split(),
     save_path=figures_path,
     fname_suffix="_pcX",
 )
-CreateFigures.method_error_bars_series(
+create_figures.method_error_bars_series(
     atomToBasisStats=pobj.algoToAtomStats["mom"],
     bases="ccX-DZ ccX-TZ ccX-QZ ccX-5Z".split(),
     x_labels="ccX-DZ/<br>cc-pVDZ ccX-TZ/<br>cc-pVTZ ccX-QZ/<br>cc-pVQZ ccX-5Z/<br>cc-pV5Z".split(),
@@ -139,10 +139,10 @@ CreateFigures.method_error_bars_series(
 ccsdNames = "D-T-Q-CCSD D-T-Q-CCSD(T) T-Q-CCSD T-Q-CCSD(T)".split()
 ccsdColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
 
-CreateFigures.extrap_err_bars_dtstudy(
+create_figures.extrap_err_bars_dtstudy(
     eobj.algoToAtomStats["mom"], ccsdNames, ccsdColors, figures_path
 )
-CreateFigures.extrap_err_bars_dtstudy_general(
+create_figures.extrap_err_bars_dtstudy_general(
     eobj.algoToStats["mom"], ccsdNames, ccsdColors, figures_path
 )
 
@@ -156,10 +156,10 @@ mp2_no5 = (
 mp2_w5 = "MP2[D T Q 5]+DifD | MP2[D T Q 5]+DifD(T) | MP2[T Q 5]+DifD | MP2[T Q 5]+DifD(T)".split(
     " | "
 )
-CreateFigures.extrap_err_bars_dtstudy(
+create_figures.extrap_err_bars_dtstudy(
     eobj.algoToAtomStats["mom"], mp2_no5, mp2Colors, figures_path, suffix="-mp2-no5"
 )
-CreateFigures.extrap_err_bars_dtstudy(
+create_figures.extrap_err_bars_dtstudy(
     eobj.algoToAtomStats["mom"], mp2_w5, mp2Colors, figures_path, suffix="-mp2-w5"
 )
 
@@ -169,34 +169,34 @@ eobj.calculate_series_statistics()
 eobj.calculate_overall_statistics()
 
 for include_pentuple in (True, False):
-    CreateFigures.extrap_err_bars_summary(
+    create_figures.extrap_err_bars_summary(
         eobj.algoToAtomStats["mom"], figures_path, include_pentuple
     )
-    CreateFigures.extrap_err_bars_atom_summary(
+    create_figures.extrap_err_bars_atom_summary(
         eobj.algoToAtomStats["mom"], figures_path, include_pentuple
     )
-    CreateFigures.benefit_of_extrapolation_over_special_basis_series(
+    create_figures.benefit_of_extrapolation_over_special_basis_series(
         pobj.algoToAtomStats["mom"],
         eobj.algoToAtomStats["mom"],
         figures_path,
         include_pentuple,
     )
-    CreateFigures.benefit_of_extrapolation_over_special_basis_overall(
+    create_figures.benefit_of_extrapolation_over_special_basis_overall(
         pobj.algoToAtomStats["mom"],
         eobj.algoToAtomStats["mom"],
         figures_path,
         include_pentuple,
     )
 
-CreateFigures.small_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
-CreateFigures.big_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
-CreateFigures.extrap_err_bars_for_toc(eobj.algoToAtomStats["mom"], figures_path)
+create_figures.small_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
+create_figures.big_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
+create_figures.extrap_err_bars_for_toc(eobj.algoToAtomStats["mom"], figures_path)
 
 
 # ----- Correlation Figures
 
 for include_pentuple in (True, False):
-    CreateFigures.correlate_extrapolation_summary(
+    create_figures.correlate_extrapolation_summary(
         eobj.algoToCBS["mom"], figures_path, include_pentuple
     )
 # include5=True. j=0. R^2: 0.9996, RMSD: 0.037, MAE: 0.027
@@ -226,7 +226,7 @@ for dEffect, suffix, axrange in (
         colors = mpColors
     else:
         colors = ccColors
-    CreateFigures.correlate_study(
+    create_figures.correlate_study(
         eobj.algoToAtomStats["mom"],
         dEffect,
         xtitle=dStudy_xTitle,
@@ -240,7 +240,7 @@ for dEffect, suffix, axrange in (
 
 # # --------------- ANALYZE TIMING ---------------
 
-TimingObj = Timing.Timer(
+TimingObj = timing.Timer(
     calc_path=DATA_PATH / "calculations" / "mom",
     atom_mols=constants.filtered_atom_to_mols,
 )
