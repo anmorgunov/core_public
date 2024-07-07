@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Dict, List, Set
 
 import numpy as np
-from Analysis import constants
+
+from analysis import constants
 
 MethodTimeType = Dict[str, float]
 BasisTimeType = Dict[str, MethodTimeType]

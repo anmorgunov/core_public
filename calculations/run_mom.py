@@ -6,7 +6,7 @@ from typing import Dict, List, Set, Union
 
 import configs
 import numpy as np
-from BasisSets import pyfiles as nwchem
+from basis_sets import pyfiles as nwchem
 from dmp2 import sgscf
 from pyscf import gto
 from pyscf.tools import cubegen
@@ -41,7 +41,7 @@ def separate_txt_by_element(path: str) -> Dict[str, str]:
 
 
 def find_basis_files() -> Dict[str, basisDictType]:
-    basis = Path(__file__).resolve().parent / "BasisSets"
+    basis = Path(__file__).resolve().parent / "basis_sets"
     # find all files that end with .txt
     basis_files = list(basis.glob("*.txt"))
     keyToBasis: Dict[str, basisDictType] = {}
