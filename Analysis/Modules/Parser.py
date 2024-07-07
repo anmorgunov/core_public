@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Set, TypedDict, Union, cast
+from typing import Dict, List, Literal, Optional, Set, TypedDict, cast
 
 import numpy as np
+import numpy.typing as npt
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
@@ -50,7 +51,11 @@ AlgoErrorsType = Dict[str, BasisErrorsType]
 AtomErrorsType = Dict[str, BasisErrorsType]
 AlgoAtomErrorsType = Dict[str, AtomErrorsType]
 
-StatsType = Dict[str, Union[float, int]]
+# fmt:off
+StatsKeyType = Literal["MSE", "MAE", "MedAE", "MaxAE", "STD(AE)", "n", "errors", "abs_errors"]
+StatsType = TypedDict('StatsType', {"MSE":float, "MAE":float, "MedAE": float, "MaxAE": float, "STD(AE)":float, "n": int, "errors": npt.NDArray[np.float64], "abs_errors":npt.NDArray[np.float64]})
+# fmt:on
+# StatsType = Dict[str, Union[float, int]]
 MethodStatsType = Dict[str, StatsType]
 BasisStatsType = Dict[str, MethodStatsType]
 AlgoStatsType = Dict[str, BasisStatsType]
@@ -96,7 +101,8 @@ class ParsedData:
         """
         Creates a data object. Main reason for using a class is to avoid having to pass different data objects from function to funtion
         """
-        self.experWB = load_workbook(experimental_wb)
+        self.experWB = load_workbook(experimental_wb, data_only=True)
+        self.exper_wb_col = "L"
         self.readWB = load_workbook(calculations_wb)
         self.save_path = calculations_wb
         self.calc_path = calculations_folder
@@ -203,25 +209,11 @@ class ParsedData:
         data = {}
         row = 2
         while True:
-            if all([ws[col + str(row)].value is None for col in ("A", "B", "C")]):
+            if ws["A" + str(row)].value is None:
                 # empty row reached = end of file
                 break
-            if all([ws[col + str(row)].value is not None for col in ("A", "B", "C")]):
-                # only parse rows with all three columns filled
-                if self.doAverageExperimental:
-                    exprs = [ws["B" + str(row)].value]
-                    col = "C"
-                    while True:
-                        col = get_next_col(col)
-                        if (val := ws[col + str(row)].value) is None:
-                            break
-                        exprs.append(val)
-                    assert all([type(expr) in {float, int} for expr in exprs])
-                    expr = np.mean(exprs)
-                else:
-                    expr = ws["B" + str(row)].value
-                fname = ws["C" + str(row)].value
-                data[fname] = expr
+            fname = ws["B" + str(row)].value
+            data[fname] = ws[self.exper_wb_col + str(row)].value
             row += 1
         self.molToExper = data
 
@@ -414,6 +406,8 @@ class ParsedData:
                             "MaxAE": np.max(abs_errs),
                             "STD(AE)": np.std(abs_errs),
                             "n": len(errors),
+                            "errors": errors,
+                            "abs_errors": abs_errs,
                         }
         self.algoToAtomStats = algoToAtomStats
 
@@ -444,6 +438,8 @@ class ParsedData:
                         "MaxAE": np.max(abs_errs),
                         "STD(AE)": np.std(abs_errs),
                         "n": len(errors),
+                        "errors": errors,
+                        "abs_errors": abs_errs,
                     }
         self.algoToStats = algoToStats
 

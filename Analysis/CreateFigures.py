@@ -15,6 +15,10 @@ Number = Union[int, float]
 METHOD_TO_LABEL = {"UHF": "ΔHF", "MP2": "ΔMP2", "CCSD": "ΔCCSD", "CCSD(T)": "ΔCCSD(T)"}
 METHOD_COLORS = ["#b2df8a", "#E0AAFF", "#48cae4", "#0077b6"]  # darker green 33a02c
 
+SUBPLOT_TITLES = [
+    f"<b>{t}</b>" for t in ("C-Series", "N-Series", "O-Series", "F-Series")
+]
+
 
 def _manual_delay() -> None:
     import time
@@ -51,6 +55,7 @@ def method_error_bars_general(basisStats: BasisStatsType, save_path: str) -> go.
     styler.AXIS_TITLE_SIZE = 24
     styler.TICK_SIZE = 24
     bases = "D T Q 5".split()
+    labels = "cc-pCVDZ<br>/cc-pVDZ cc-pCVTZ<br>/cc-pVTZ cc-pCVQZ<br>/cc-pVQZ cc-pCV5Z<br>/cc-pV5Z".split()
 
     for i, method in enumerate(figureSpecs.METHOD_TO_BASIS):
         yVals, yErrs = [], []
@@ -63,7 +68,7 @@ def method_error_bars_general(basisStats: BasisStatsType, save_path: str) -> go.
             yErrs.append(std)
         fig.add_trace(
             create_bar_trace(
-                bases, yVals, METHOD_TO_LABEL[method], yErrs, METHOD_COLORS[i]
+                labels, yVals, METHOD_TO_LABEL[method], yErrs, METHOD_COLORS[i]
             )
         )
     fig.update_yaxes(range=[0, 2.19])
@@ -95,6 +100,7 @@ def method_error_bars_general(basisStats: BasisStatsType, save_path: str) -> go.
 def method_error_bars_series(
     atomToBasisStats: AtomBasisStatsType,
     bases: List[str],
+    x_labels: List[str],
     save_path: str,
     fname_suffix: str = "",
 ) -> go.Figure:
@@ -126,7 +132,7 @@ def method_error_bars_series(
                 yErrs.append(std)
             fig.add_trace(
                 create_bar_trace(
-                    bases,
+                    x_labels,
                     yVals,
                     METHOD_TO_LABEL[method],
                     yErrs,
@@ -136,9 +142,9 @@ def method_error_bars_series(
                 row=1 + j // 2,
                 col=1 + j % 2,
             )
-    fig.update_yaxes(range=[0, 2.39])
+    fig.update_yaxes(range=[0, 2.25])
     styler._update_axes(
-        fig, ytitle="MAE compared with<br>experimental CEBEs (eV)", ydtick=0.4
+        fig, ytitle="MAE compared with<br>experimental CEBEs (eV)", ydtick=0.2
     )
     styler._update_fig(fig)
     fig.update_layout(barmode="group")
@@ -148,10 +154,10 @@ def method_error_bars_series(
     fig["layout"]["xaxis2"].update(title="", tickvals=[])
     fig.update_yaxes(ticksuffix="")
     fig.update_layout(
-        margin=dict(l=0, r=20, t=30, b=20),
+        margin=dict(l=0, r=20, t=30, b=80),
         legend=dict(
             yanchor="bottom",
-            y=-0.15,
+            y=-0.2,
             xanchor="left",
             x=0.15,
             orientation="h",
@@ -284,6 +290,168 @@ def extrap_err_bars_summary(
     )
     suffix = "-w5" if include5 else "-no5"
     styler._save_fig(fig, save_path, "bars_summary" + suffix)
+    return fig
+
+
+def extrap_err_bars_atom_summary(
+    atomSchemeStats: AtomStatsType, save_path: str, include5: bool = True
+) -> go.Figure:
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=SUBPLOT_TITLES,
+        vertical_spacing=0.08,
+        horizontal_spacing=0.07,
+    )
+    styler = Styler()
+    styler.TICK_SIZE = 12
+    styler.AXIS_TITLE_SIZE = 14
+    if include5:
+        atomToNames = figureSpecs.errBarrSummary_w5
+    else:
+        atomToNames = figureSpecs.errBarSummary_no5
+
+    # fmt:off
+    labels = ["MP2[∞]", "MP2[∞]<br>+δ(STO-3G)", "MP2[∞]<br>+δ(3-21G)", "MP2[∞]<br>+δ(D)", "CCSD[∞]"]  # fmt:on
+    extrapscale = ["#c77dff"] + ["#9d4edd"] * 3 + ["#48cae4"] * 1
+
+    for atom_idx, (atom, names) in enumerate(atomToNames.items()):
+        yVals, yErrs = [], []
+        for scheme_idx in range(5):  # 5 is the number of schemeNames
+            errs = atomSchemeStats[atom][names[scheme_idx]]["abs_errors"]
+            yVals.append(cast(float, np.mean(errs)))
+            yErrs.append(cast(float, np.mean(errs)))
+
+        fig.add_trace(
+            create_bar_trace(
+                labels, yVals, "general", yErrs, extrapscale, showlegend=False
+            ),
+            row=1 + atom_idx // 2,
+            col=1 + atom_idx % 2,
+        )
+
+    fig.update_yaxes(range=[0, 0.59])
+    styler._update_axes(
+        fig, ytitle="MAE compared with<br>experimental CEBEs (eV)", ydtick=0.1
+    )  # ydtick=0.1
+    styler._update_fig(fig)
+    fig.update_layout(margin=dict(l=20, r=20, t=30, b=0), width=850)
+    fig["layout"]["xaxis1"].update(showticklabels=False, tickvals=[])
+    fig["layout"]["xaxis2"].update(showticklabels=False, tickvals=[])
+    fig["layout"]["yaxis2"].update(title="")
+    fig["layout"]["yaxis4"].update(title="")
+    suffix = "-w5" if include5 else "-no5"
+    styler._save_fig(fig, save_path, "bars_atom_summary" + suffix)
+    return fig
+
+
+def benefit_of_extrapolation_over_special_basis_series(
+    atomBasisStats: AtomBasisStatsType,
+    atomSchemeStats: AtomStatsType,
+    save_path: str,
+    include5: bool = True,
+) -> go.Figure:
+    fig = make_subplots(
+        rows=2,
+        cols=2,
+        subplot_titles=SUBPLOT_TITLES,
+        vertical_spacing=0.08,
+        horizontal_spacing=0.07,
+    )
+    styler = Styler()
+    styler.TICK_SIZE = 12
+    styler.AXIS_TITLE_SIZE = 14
+    if include5:
+        atomToNames = figureSpecs.extrapOrNot_w5
+    else:
+        atomToNames = figureSpecs.extrapOrNot_no5
+
+    # fmt:off
+    labels = ["MP2[∞]<br>+δ(D)", "CCSD[∞]", "CCSD[pcX-1]", "CCSD[ccX-DZ]"]  # fmt:on
+    extrapscale = ["#9d4edd"] * 1 + ["#48cae4"] * 3
+
+    for atom_idx, (atom, names) in enumerate(atomToNames.items()):
+        yVals, yErrs = [], []
+        for scheme_idx in range(2):  # 5 is the number of schemeNames
+            errs = atomSchemeStats[atom][names[scheme_idx]]["abs_errors"]
+            yVals.append(cast(float, np.mean(errs)))
+            yErrs.append(cast(float, np.mean(errs)))
+
+        for b_i, basis in enumerate(["pcX-1", "ccX-DZ"]):
+            errDict = atomBasisStats[atom][basis][names[2 + b_i]]
+            yVals.append(errDict["MAE"])
+            yErrs.append(errDict["STD(AE)"])
+
+        fig.add_trace(
+            create_bar_trace(
+                labels, yVals, "general", yErrs, extrapscale, showlegend=False
+            ),
+            row=1 + atom_idx // 2,
+            col=1 + atom_idx % 2,
+        )
+
+    fig.update_yaxes(range=[0, 0.59])
+    styler._update_axes(
+        fig, ytitle="MAE compared with<br>experimental CEBEs (eV)", ydtick=0.1
+    )  # ydtick=0.1
+    styler._update_fig(fig)
+    fig.update_layout(margin=dict(l=20, r=20, t=30, b=0), width=800)
+    fig["layout"]["xaxis1"].update(showticklabels=False, tickvals=[])
+    fig["layout"]["xaxis2"].update(showticklabels=False, tickvals=[])
+    fig["layout"]["yaxis2"].update(title="")
+    fig["layout"]["yaxis4"].update(title="")
+    suffix = "-w5" if include5 else "-no5"
+    styler._save_fig(fig, save_path, "bars_need_for_extrap_series" + suffix)
+    return fig
+
+
+def benefit_of_extrapolation_over_special_basis_overall(
+    atomBasisStats: AtomBasisStatsType,
+    atomSchemeStats: AtomStatsType,
+    save_path: str,
+    include5: bool = True,
+) -> go.Figure:
+    fig = go.Figure()
+    styler = Styler()
+    styler.TICK_SIZE = 12
+    styler.AXIS_TITLE_SIZE = 14
+    if include5:
+        atomToNames = figureSpecs.extrapOrNot_w5
+    else:
+        atomToNames = figureSpecs.extrapOrNot_no5
+
+    # fmt:off
+    labels = ["MP2[∞]<br>+δ(D)", "CCSD[∞]", "CCSD[pcX-1]", "CCSD[ccX-DZ]"]  # fmt:on
+    extrapscale = ["#9d4edd"] * 1 + ["#48cae4"] * 3
+
+    yVals, yErrs = [], []
+    for scheme_idx in range(2):  # 5 is the number of schemeNames
+        errs: List[float] = []
+        for atom, names in atomToNames.items():
+            errs.extend(atomSchemeStats[atom][names[scheme_idx]]["abs_errors"])
+        yVals.append(cast(float, np.mean(errs)))
+        yErrs.append(cast(float, np.mean(errs)))
+
+    for b_i, basis in enumerate(["pcX-1", "ccX-DZ"]):
+        errs = []
+        for atom, names in atomToNames.items():
+            errs.extend(atomBasisStats[atom][basis][names[2 + b_i]]["abs_errors"])
+
+        yVals.append(cast(float, np.mean(errs)))
+        yErrs.append(cast(float, np.mean(errs)))
+
+    fig.add_trace(
+        create_bar_trace(labels, yVals, "general", yErrs, extrapscale, showlegend=False)
+    )
+
+    fig.update_yaxes(range=[0, 0.59])
+    styler._update_axes(
+        fig, ytitle="MAE compared with<br>experimental CEBEs (eV)", ydtick=0.1
+    )  # ydtick=0.1
+    styler._update_fig(fig)
+    fig.update_layout(margin=dict(l=20, r=20, t=30, b=0))
+    suffix = "-w5" if include5 else "-no5"
+    styler._save_fig(fig, save_path, "bars_need_for_extrap_overall" + suffix)
     return fig
 
 
@@ -573,6 +741,8 @@ def correlate_extrapolation_summary(
             col=1 + j % 2,
         )
         r_sq = calculate_r2(xVals, yVals)
+        rmsd, mae = calculate_statistics(xVals, yVals)
+        print(f"{include5=}. {j=}. R^2: {r_sq:.4f}, RMSD: {rmsd:.3f}, MAE: {mae:.3f}")
 
         # the below is really only about the placement of the R^2 text
         def fRsqx(j: int) -> float:

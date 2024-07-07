@@ -10,7 +10,6 @@ ConfigType = TypedDict(
         "doSFX": bool,
         "toFreeze": bool,
         "doChengBasis": bool,
-        "doSpecialBasis": bool,
         "basisLibKey": str,
         "toPrintDensity": bool,
     },
@@ -24,7 +23,6 @@ GEN_CONFIG: ConfigType = dict(
     doSFX=True,
     toFreeze=True,
     doChengBasis=False,
-    doSpecialBasis=False,
     basisLibKey="6-311+G(3df)",
     toPrintDensity=False,
 )
@@ -48,7 +46,6 @@ TEST_CONFIG: ConfigType = dict(
     doSFX=True,
     toFreeze=True,
     doChengBasis=False,
-    doSpecialBasis=False,
     basisLibKey="6-311+G(3df)",
     toPrintDensity=False,
 )
@@ -60,7 +57,6 @@ LOCAL_CONFIG: ConfigType = dict(
     doSFX=True,
     toFreeze=True,
     doChengBasis=False,
-    doSpecialBasis=False,
     basisLibKey="6-311+G(3df)",
     toPrintDensity=False,
 )
@@ -73,7 +69,6 @@ MP3_CONFIG: ConfigType = dict(
     doSFX=True,
     toFreeze=True,
     doChengBasis=False,
-    doSpecialBasis=False,
     basisLibKey="6-311+G(3df)",
     toPrintDensity=True,
 )

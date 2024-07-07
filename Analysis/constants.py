@@ -9,8 +9,14 @@ atom_mols_list = {
     + " hf pf3 cf3chch2 cf3cch bf3 cf3ocf3".split(),  # c2f4
 }
 ATOM_TO_MOLS = {atom.lower(): set(mols) for atom, mols in atom_mols_list.items()}
-
 # fmt:off
+filtered_atom_to_mols = {
+    'c': ['c-h3cn', 'c-fh3', 'ch3-c-n', 'c2h6-c-o', 'c2-h6', 'c-h3cch', 'h-c-o2ch3', 'c-h2o', 'c-cl3h', 'c-o2', 'c-f4', 'c-h3oh', 'c-h3och3', 'ch3-c-ho', 'c-o', 'ch3-c-o2h', 'c-cl4', 'c2-h4', 'c2-h2', 'c-f3h', 'c-h3nc', 'h2c-c-ch2', 'c-clh3', 'c-h4', 'c-cl2h2', 'c-f2h2'],
+    'n': ['h-n-co', 'ofpyridine', 'pfpyridine', 'pyridine', 'pyrrole', 'ch2chc-n', 'n-cch2cn', 'hcn', 'hco-n-hch3', 'o-n-h2pyridine', 'p-n-h2pyridine', 'pnh2pyridi-n-e', 'me2-n-cho', 'hconh2', 'onh2pyridi-n-e', 'c2h5nh2', 'mnh2pyridi-n-e', 'h2n-c2h4oh', 'ipr-nh2', 'm-n-h2pyridine', 'ch3nh2', 'ch3sc-n', 'pohpyridine', 'c2h5c-n', 'nh3', 'h2n-c2h4nh2', 'pr-nh2', 'h2n-cho', '2pyrido-n-e', 'ch3nhch3'], 
+    'o': ['h2o', 'pr-oh', 'h2nc-o-nh2', 'cf3co-o-h', 'ch3cooh', 'co', 'cf3c-o-oh', 'ch3oh', 'hcooh', 'ch3c-o-oh', 'ch3n-o2', 'ch3co-o-ch3', 'ipr-oh', 'hcooch3', 'hcho', 'h2nch-o', 'hnc-o', 'ch2chcho', 'ch3och3', 'hc-o-och3', 'c2h5oh', 'ch3c-o-och3', 'co2', 'c4h4o', 'ch3coch3'], 
+    'f': ['ch3f', 'ch2f2', 'cf3ocf3', 'pf3', 'bf3', 'f2', 'c2h3f', 'cf3cch', 'hf', 'chf3', 'c2h5f', 'cf3chch2', 'cf4'], 
+}
+
 FNAME_TO_MOLS={
     "c-cl2h2":{"atom":"C","latex":"\\textbf{C}H2Cl2","formula":"CH2Cl2",},
     "c-cl3h":{"atom":"C","latex":"\\textbf{C}HCl3","formula":"CHCl3",},

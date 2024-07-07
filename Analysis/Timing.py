@@ -1,8 +1,11 @@
+import re
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Set
+from typing import Dict, List, Set
 
 import numpy as np
+
+from Analysis import constants
 
 MethodTimeType = Dict[str, float]
 BasisTimeType = Dict[str, MethodTimeType]
@@ -12,26 +15,26 @@ MoleculeTimeType = Dict[str, BasisTimeType]
 class Timer:
     subtraction = {
         "MP3": "MP2",
-        "UMP3": "UMP2",
         "CCSD(T)": "CCSD",
         "UCCSD(T)": "UCCSD",
-        "U-MP3": "U-MP2",
         "U-CCSD(T)": "U-CCSD",
     }  # timestamp for completion of MP3 combines MP2 and MP3
     # fmt: off
-    newToOld = {"UMP2": "U-MP2","UMP3": "U-MP3","UCCSD": "U-CCSD","UCCSD(T)": "U-CCSD(T)"}  # fmt:on
+    newToOld = {"UMP2": "U-MP2", "UCCSD": "U-CCSD","UCCSD(T)": "U-CCSD(T)"}  # fmt:on
     basToMethods = {
-        "D": set("HF UHF MP2 UMP2 MP3 UMP3 CCSD UCCSD CCSD(T) UCCSD(T)".split()),
-        "T": set("HF UHF MP2 UMP2 MP3 UMP3 CCSD UCCSD CCSD(T) UCCSD(T)".split()),
+        "D": set("HF UHF MP2 UMP2 CCSD UCCSD CCSD(T) UCCSD(T)".split()),
+        "T": set("HF UHF MP2 UMP2 CCSD UCCSD CCSD(T) UCCSD(T)".split()),
         "Q": set("HF UHF MP2 UMP2 CCSD UCCSD CCSD(T) UCCSD(T)".split()),
         "5": set("HF UHF MP2 UMP2".split()),
     }
-    methods = "HF UHF MP2 UMP2 MP3 UMP3 CCSD UCCSD CCSD(T) UCCSD(T)".split()
+    methods = "HF UHF MP2 UMP2 CCSD UCCSD".split()
 
-    def __init__(self, calc_path: Path, atoms: Set[str]) -> None:
+    def __init__(self, calc_path: Path, atom_mols: Dict[str, List[str]]) -> None:
         self.calc_path = calc_path
-        self.desired_atoms = atoms
+        self.atom_to_mols = atom_mols
         self.molToBasToRun: MoleculeTimeType = {}
+        self.mol_bas_cores: Dict[str, Dict[str, int]] = {}
+        self.used_cores: Set[int] = set()
 
         extra_bases = "pcX-1 pcX-2 pcX-3 ccX-DZ ccX-TZ ccX-QZ".split()
         for basis in extra_bases:
@@ -41,12 +44,8 @@ class Timer:
             self.basToMethods[basis] = self.basToMethods["5"]
 
     def parse_timestamps(self) -> None:
-        atoms = [f.name for f in self.calc_path.glob("*/")]
-        for atom in atoms:
-            if atom not in self.desired_atoms:
-                continue
+        for atom, molecules in self.atom_to_mols.items():
             atomPath = self.calc_path / atom
-            molecules = [f.name for f in atomPath.glob("*/")]
             for molecule in molecules:
                 molPath = atomPath / molecule
                 bases = [f.name for f in molPath.glob("*/")]
@@ -55,6 +54,16 @@ class Timer:
                     ts_path = molPath / basis / "timestamps.txt"
                     if not ts_path.exists():
                         continue
+
+                    submit_path = molPath / basis / "submit.sh"
+                    with open(submit_path, "r") as f:
+                        matches = re.search(r"#SBATCH -c (\d+)", f.read())
+                        if matches:
+                            self.mol_bas_cores.setdefault(molecule, {})[basis] = int(
+                                matches.group(1)
+                            )
+                            self.used_cores.add(int(matches.group(1)))
+
                     with open(ts_path, "r") as f:
                         lines = f.readlines()
                     methods = set()
@@ -71,17 +80,14 @@ class Timer:
                             basis, {}
                         )[method] = runtime.seconds
 
-    def export_errors(self, save_path: Path) -> None:
+    def export_runtimes(self, save_path: Path, allow_cores: int = 8) -> None:
         body = "# Runtimes\n\n"
-        body += "| Stat | Basis | RHF | UHF | MP2 | U-MP2 | MP3 | U-MP3 | CCSD | U-CCSD | (T) | U-(T) |\n"
-        body += "| - | - | - | - | - | - | - | - | - | - | - | - |\n"
+        body += "| Basis | RHF | UHF | MP2 | U-MP2 | CCSD | U-CCSD | N |\n"
+        body += "| - | - | - | - | - | - | - | - |\n"
 
         bases = "D pcX-1 ccX-DZ T pcX-2 ccX-TZ Q pcX-3 ccX-QZ 5 pcX-4 ccX-5Z".split()
         for basis in bases:
-            avgRow = f"| Avg | {basis} |"
-            stdRow = f"| Std | {basis} |"
-            medRow = f"| Med | {basis} |"
-            maxRow = f"| Max | {basis} |"
+            row = f"| {basis} |"
             if basis in {"5", "pcX-4", "ccX-5Z"}:
                 molecules = [
                     mol
@@ -96,10 +102,12 @@ class Timer:
                     if basis in self.molToBasToRun[mol]
                     and "UCCSD" in self.molToBasToRun[mol][basis]
                 ]
-
+            n_samples_set: Set[int] = set()
             for method in self.methods:
-                runtimes = []
+                runtimes_list = []
                 for molecule in molecules:
+                    # if self.mol_bas_cores[molecule][basis] != allow_cores:
+                    #     continue
                     if basis in self.molToBasToRun[molecule]:
                         if method not in self.basToMethods[basis]:
                             continue
@@ -112,39 +120,42 @@ class Timer:
                                 continue
                             method = self.newToOld[method]
                         # if basis == '5' and method == 'UHF': print(molecule, method, molToBasToRun[molecule][basis][method])
-                        runtime = self.molToBasToRun[molecule][basis][method]
+                        runtime = (
+                            self.molToBasToRun[molecule][basis][method]
+                            * self.mol_bas_cores[molecule][basis]
+                        )
                         if "MP3" in method or "CCSD(T)" in method:
                             runtime -= self.molToBasToRun[molecule][basis][
                                 self.subtraction[method]
                             ]
-                        runtimes.append(runtime)
-                if runtimes:
-                    # print(basis, len(runtimes))
-                    avg = f"{(np.mean(runtimes) / 60):.1f}"
-                    std = f"{(np.std(runtimes) / 60):.1f}"
-                    med = f"{(np.median(runtimes) / 60):.1f}"
-                    maxV = f"{(np.max(runtimes) / 60):.1f}"
+                        runtimes_list.append(runtime)
+                if len(runtimes_list) > 0:
+                    runtimes = np.array(runtimes_list) / 60
+                    row += f" {np.mean(runtimes):.0f} ± {np.std(runtimes):.0f} |"
+                    n_samples_set.add(len(runtimes))
                 else:
-                    avg, std, med, maxV = "ND", "ND", "ND", "ND"
-                avgRow += f" {avg} |"
-                stdRow += f" {std} |"
-                medRow += f" {med} |"
-                maxRow += f" {maxV} |"
-            avgRow += "\n"
-            stdRow += "\n"
-            medRow += "\n"
-            maxRow += "\n"
-            body += avgRow
-            # body += stdRow
-            # body += medRow
-            body += maxRow
-        with open(save_path / "timer.md", "w") as file:
+                    row += " ND |"
+            if len(n_samples_set) > 1:
+                print(
+                    f"Warning: {basis} has different number of samples, {n_samples_set}"
+                )
+            n_samples = n_samples_set.pop() if len(n_samples_set) > 0 else "N/D"
+            row += f"{n_samples} |\n"
+            body += row
+        with open(save_path / "timing-cpu.md", "w") as file:
             file.write(body)
 
     def main(self, save_path: Path) -> None:
         self.parse_timestamps()
-        self.export_errors(save_path)
+        # for n_cores in self.used_cores:
+        # self.export_runtimes(save_path, n_cores)
+        self.export_runtimes(save_path)
 
 
 if __name__ == "__main__":
-    pass
+    data_path = Path(__file__).resolve().parent.parent / "Data"
+    t = Timer(
+        calc_path=data_path / "calculations" / "mom",
+        atom_mols=constants.filtered_atom_to_mols,
+    )
+    t.main(data_path)

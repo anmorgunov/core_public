@@ -85,9 +85,17 @@ class MethodSummary(CebeTable):
     col_names = ["Basis", "Method", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
     basisToMethods = {
         "D": "UHF MP2 CCSD CCSD(T)".split(),
+        "pcX-1": "UHF MP2 CCSD CCSD(T)".split(),
+        "ccX-DZ": "UHF MP2 CCSD CCSD(T)".split(),
         "T": "UHF MP2 CCSD CCSD(T)".split(),
+        "pcX-2": "UHF MP2 CCSD CCSD(T)".split(),
+        "ccX-TZ": "UHF MP2 CCSD CCSD(T)".split(),
         "Q": "UHF MP2 CCSD CCSD(T)".split(),
+        "pcX-3": "UHF MP2 CCSD CCSD(T)".split(),
+        "ccX-QZ": "UHF MP2 CCSD CCSD(T)".split(),
         "5": "UHF MP2".split(),
+        "pcX-4": "UHF MP2".split(),
+        "ccX-5Z": "UHF MP2".split(),
     }
 
     def __init__(
@@ -121,7 +129,9 @@ class MethodSummary(CebeTable):
                 stats = statsContainer[basis][method]
                 row = [basis, _format_method(method)]
                 for key in "MSE MAE MedAE MaxAE STD(AE)".split():
-                    row.append(self._format(stats[key]))
+                    row.append(
+                        self._format(cast(float, stats[cast(StatsKeyType, key)]))
+                    )
                 if self.show_sample_size:
                     row.append(str(stats["n"]))
                 nSet.add(int(stats["n"]))
@@ -178,10 +188,13 @@ class MethodSummary(CebeTable):
     def all_results(self) -> None:
         atoms = self.atomToBasisStats.keys()
         for atom in atoms:
-            if self.isPublication:
-                bases = "D T Q 5".split()
-            else:
-                bases = "D ccX-DZ pcX-1 T ccX-TZ pcX-2 Q ccX-QZ pcX-3 5 ccX-5Z pcX-4".split()
+            # if self.isPublication:
+            # bases = "D T Q 5".split()
+            bases = (
+                "D pcX-1 ccX-DZ T pcX-2 ccX-TZ Q pcX-3 ccX-QZ 5 pcX-4 ccX-5Z".split()
+            )
+            # else:
+            # bases = "D ccX-DZ pcX-1 T ccX-TZ pcX-2 Q ccX-QZ pcX-3 5 ccX-5Z pcX-4".split()
             path = str(self.save_folder / f"{atom}-summary.tex")
             self.series_table(atom.lower(), bases, path)
 

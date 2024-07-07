@@ -34,6 +34,20 @@ errBarSummary_no5 = {
     "f": ["MP2[T Q]", "MP2[T Q]+DifSTO-3G(T)", "MP2[T Q]+Dif3-21G(T)", "MP2[T Q]+DifD(T)", "T-Q-CCSD(T)"],
 }
 
+extrapOrNot_w5 = {
+    "c": ["MP2[D T Q 5]+DifD(T)", "D-T-Q-CCSD(T)", "CCSD(T)", "CCSD(T)", "CCSD(T)"],
+    "n": ["MP2[T Q 5]+DifD", "T-Q-CCSD", "CCSD", "CCSD", "CCSD"],
+    "o": ["MP2[T Q 5]+DifD", "T-Q-CCSD", "CCSD", "CCSD", "CCSD"],
+    "f": ["MP2[T Q 5]+DifD(T)", "T-Q-CCSD(T)", "CCSD", "CCSD", "CCSD"],
+}
+
+extrapOrNot_no5 = {
+    "c": ["MP2[D T Q]+DifD(T)", "D-T-Q-CCSD(T)", "CCSD(T)", "CCSD(T)", "CCSD(T)"],
+    "n": ["MP2[T Q]+DifD", "T-Q-CCSD", "CCSD", "CCSD", "CCSD"],
+    "o": ["MP2[T Q]+DifD", "T-Q-CCSD", "CCSD", "CCSD", "CCSD"],
+    "f": ["MP2[T Q]+DifD(T)", "T-Q-CCSD(T)", "CCSD", "CCSD", "CCSD"],
+}
+
 smallBasisStudy = {
     "c": ["MP2[D T Q]+DifSTO-3G(T)", "MP2[D T Q]+DifSTO-6G(T)", "MP2[D T Q]+Dif3-21G(T)", "MP2[D T Q]+Dif4-31G(T)", "MP2[D T Q]+Dif6-31G(T)", "MP2[D T Q]+DifD(T)"],
     "n": ["MP2[T Q]+DifSTO-3G", "MP2[T Q]+DifSTO-6G", "MP2[T Q]+Dif3-21G", "MP2[T Q]+Dif4-31G", "MP2[T Q]+Dif6-31G", "MP2[T Q]+DifD"],

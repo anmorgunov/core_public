@@ -12,7 +12,6 @@ BASE_PATH = Path(__file__).resolve().parent
 DATA_PATH = BASE_PATH / "Data"
 TABLE_PATH = DATA_PATH / "paper-tables"
 FIGURE_PATH = DATA_PATH / "paper-figures"
-CALCS_FOLDER = BASE_PATH / "calculations"
 
 # --------------- PERFORM PARSING ---------------
 pobj = Parser.ParsedData(
@@ -37,8 +36,24 @@ pobj.process(save=False)
 
 # # First, let's filter out the molecules we want to use
 atomToMols = constants.ATOM_TO_MOLS
+# excludeAtomToMols = {
+#     "c": set("c-o ch3-c-o2h".split()),
+#     "n": set(
+#         "mnh2pyridi-n-e onh2pyridi-n-e o-n-h2pyridine m-n-h2pyridine pfpyridine".split()
+#     ),
+#     "o": set(
+#         "cf3co-o-h cf3c-o-oh ch3co-o-ch3 ch3c-o-och3 ".split()
+#     ),
+#     "f": set("cf3ocf3".split()),
+# }
+# atomToMols = {
+#     atom.lower(): atomToMols[atom] - excludeAtomToMols[atom]
+#     for atom in atomToMols
+# }
 filtered_by_mols = pobj.filter_data_by_molecules(pobj.algoToData, atomToMols)
 filteredData = pobj.filter_by_presence_of_experimental(filtered_by_mols)
+
+# filtered_atomToMols = {atom: list(mols) for atom, mols in filteredData['mom'].items()}
 pobj.calculate_errors(filteredData)
 pobj.calculate_series_statistics()
 pobj.calculate_overall_statistics()
@@ -55,8 +70,7 @@ eobj.calculate_errors(pobj.molToExper)
 eobj.calculate_series_statistics()
 eobj.calculate_overall_statistics()
 
-
-# # --------------- CREATE TABLES ---------------
+# --------------- CREATE TABLES ---------------
 
 table1 = CreateTables.SingleZetaResults(
     atomToData=filteredData["mom"],
@@ -69,7 +83,7 @@ table2 = CreateTables.MethodSummary(
     pobj.algoToStats["mom"],
     pobj.algoToAtomStats["mom"],
     save_folder=TABLE_PATH / "method-summaries",
-    show_sample_size=False,
+    show_sample_size=True,
     isPublication=True,
 )
 table2.all_results()
@@ -78,7 +92,7 @@ table3 = CreateTables.ExtrapSchemeSummary(
     eobj.algoToStats["mom"],
     eobj.algoToAtomStats["mom"],
     save_folder=TABLE_PATH / "extrap-summaries",
-    show_sample_size=False,
+    show_sample_size=True,
     isPublication=True,
 )
 
@@ -95,7 +109,7 @@ relevantMols = {
 
 table4.main(relevantMols)
 
-# --------------- CREATE FIGURES ---------------
+# # --------------- CREATE FIGURES ---------------
 CreateFigures._manual_delay()
 
 figures_path = str(FIGURE_PATH)
@@ -103,21 +117,25 @@ CreateFigures.method_error_bars_general(pobj.algoToStats["mom"], figures_path)
 CreateFigures.method_error_bars_series(
     atomToBasisStats=pobj.algoToAtomStats["mom"],
     bases="D T Q 5".split(),
+    x_labels="cc-pCVDZ<br>/cc-pVDZ cc-pCVTZ<br>/cc-pVTZ cc-pCVQZ<br>/cc-pVQZ cc-pCV5Z<br>/cc-pV5Z".split(),
     save_path=figures_path,
     fname_suffix="_ccReg",
 )
 CreateFigures.method_error_bars_series(
     atomToBasisStats=pobj.algoToAtomStats["mom"],
     bases="pcX-1 pcX-2 pcX-3 pcX-4".split(),
+    x_labels="pcX-1<br>/pc-1 pcX-2<br>/pc-2 pcX-3<br>/pc-3 pcX-4<br>/pc-4".split(),
     save_path=figures_path,
     fname_suffix="_pcX",
 )
 CreateFigures.method_error_bars_series(
     atomToBasisStats=pobj.algoToAtomStats["mom"],
     bases="ccX-DZ ccX-TZ ccX-QZ ccX-5Z".split(),
+    x_labels="ccX-DZ/<br>cc-pVDZ ccX-TZ/<br>cc-pVTZ ccX-QZ/<br>cc-pVQZ ccX-5Z/<br>cc-pV5Z".split(),
     save_path=figures_path,
     fname_suffix="_ccX",
 )
+
 ccsdNames = "D-T-Q-CCSD D-T-Q-CCSD(T) T-Q-CCSD T-Q-CCSD(T)".split()
 ccsdColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
 
@@ -154,6 +172,21 @@ for include_pentuple in (True, False):
     CreateFigures.extrap_err_bars_summary(
         eobj.algoToAtomStats["mom"], figures_path, include_pentuple
     )
+    CreateFigures.extrap_err_bars_atom_summary(
+        eobj.algoToAtomStats["mom"], figures_path, include_pentuple
+    )
+    CreateFigures.benefit_of_extrapolation_over_special_basis_series(
+        pobj.algoToAtomStats["mom"],
+        eobj.algoToAtomStats["mom"],
+        figures_path,
+        include_pentuple,
+    )
+    CreateFigures.benefit_of_extrapolation_over_special_basis_overall(
+        pobj.algoToAtomStats["mom"],
+        eobj.algoToAtomStats["mom"],
+        figures_path,
+        include_pentuple,
+    )
 
 CreateFigures.small_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
 CreateFigures.big_basis_study_subplots(eobj.algoToAtomStats["mom"], figures_path)
@@ -166,6 +199,14 @@ for include_pentuple in (True, False):
     CreateFigures.correlate_extrapolation_summary(
         eobj.algoToCBS["mom"], figures_path, include_pentuple
     )
+# include5=True. j=0. R^2: 0.9996, RMSD: 0.037, MAE: 0.027
+# include5=True. j=1. R^2: 0.9971, RMSD: 0.106, MAE: 0.074
+# include5=True. j=2. R^2: 0.9997, RMSD: 0.033, MAE: 0.023
+# include5=True. j=3. R^2: 0.9974, RMSD: 0.097, MAE: 0.063
+# include5=False. j=0. R^2: 0.9997, RMSD: 0.036, MAE: 0.025
+# include5=False. j=1. R^2: 0.9973, RMSD: 0.101, MAE: 0.072
+# include5=False. j=2. R^2: 0.9997, RMSD: 0.031, MAE: 0.020
+# include5=False. j=3. R^2: 0.9976, RMSD: 0.093, MAE: 0.061
 
 ccColors = ["#90caf9", "#64b5f6", "#2196f3", "#1976d2"]
 mpColors = ["#e0aaff", "#c77dff", "#9d4edd", "#7b2cbf"]
@@ -185,26 +226,27 @@ for dEffect, suffix, axrange in (
         colors = mpColors
     else:
         colors = ccColors
-CreateFigures.correlate_study(
-    eobj.algoToAtomStats["mom"],
-    dEffect,
-    xtitle=dStudy_xTitle,
-    ytitle=dStudy_yTitle,
-    axrange=axrange,
-    suffix=suffix,
-    colors=colors,
-    save_path=figures_path,
-)
+    CreateFigures.correlate_study(
+        eobj.algoToAtomStats["mom"],
+        dEffect,
+        xtitle=dStudy_xTitle,
+        ytitle=dStudy_yTitle,
+        axrange=axrange,
+        suffix=suffix,
+        colors=colors,
+        save_path=figures_path,
+    )
 
 
-# --------------- ANALYZE TIMING ---------------
+# # --------------- ANALYZE TIMING ---------------
 
 TimingObj = Timing.Timer(
-    calc_path=DATA_PATH / "calculations" / "mom", atoms={"o"}  # {"c", "n", "o", "f"}
+    calc_path=DATA_PATH / "calculations" / "mom",
+    atom_mols=constants.filtered_atom_to_mols,
 )
 TimingObj.main(save_path=DATA_PATH)
 
-# ---------------- Reference Values Table ----------------
+# # ---------------- Reference Values Table ----------------
 atomToExper: Dict[str, Dict[str, float]] = {}
 for atom, molData in filteredData["mom"].items():
     for molecule in molData.keys():
@@ -256,4 +298,4 @@ def create_reference_values_table(
 ref_table = create_reference_values_table(atomToExper, columns=3)
 with open(DATA_PATH / "reference_values_table.tex", "w") as f:
     f.write(ref_table)
-# ---------------------------------------
+# # ---------------------------------------

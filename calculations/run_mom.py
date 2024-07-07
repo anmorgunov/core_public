@@ -74,6 +74,7 @@ class CEBECalculator:
         path_to_geometry: str,
         core_basis: str,
         regular_basis: str,
+        do_special_basis: bool = False,
         localize: bool = False,
         config_key: str = "quadruple",
         diis_start: int = 0,
@@ -88,6 +89,7 @@ class CEBECalculator:
         self.path_to_geometry = path_to_geometry
         self.core_basis = core_basis
         self.regular_basis = regular_basis
+        self.do_special_basis = do_special_basis
         self.localize = localize
         self.config_key = config_key
         self.diis_start = diis_start
@@ -134,7 +136,7 @@ class CEBECalculator:
             for element in element_symbols:
                 if element != self.element_to_ionize:
                     basis_dict[element] = gto.basis.parse(basisDic[element]["reg"])
-        elif self.config["doSpecialBasis"]:
+        elif self.do_special_basis:
             specBasisDic = self.externalBasisLibrary[self.core_basis]
             for element in element_symbols:
                 basis_dict[element] = self.regular_basis
@@ -163,9 +165,9 @@ class CEBECalculator:
         print("\t      Do SFX2C1E?:\t", self.config["doSFX"])
         print("\t      Freeze orbitals?:\t", self.config["toFreeze"])
         print("\t      Use Cheng orbitals?:\t", self.config["doChengBasis"])
-        print("\t      Do Special Basis?:\t", self.config["doSpecialBasis"])
-        if self.config["doSpecialBasis"]:
-            print("\t      Do Special Basis?:\t", self.core_basis)
+        print("\t      Do Special Basis?:\t", self.do_special_basis)
+        if self.do_special_basis:
+            print("\t      Special Basis:\t", self.core_basis)
         print("\t*********************************************** ")
         print("\t*********************************************** ")
 
@@ -450,6 +452,7 @@ if __name__ == "__main__":
         path_to_geometry=args.geom,
         core_basis=args.corebasis,
         regular_basis=args.regularbasis,
+        do_special_basis=args.dospecialbasis,
         localize=args.localize,
         config_key=args.config,
         diis_start=args.diis_start,
