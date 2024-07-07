@@ -1,0 +1,335 @@
+	*********************************************** 
+	***** Beginning CEBE Calculation with MOM ***** 
+	*****       Calculation Details:          ***** 
+	      Geometry:	 /work/morgunov/core/calculations/mols/exp/c/c2-h2.xyz
+	      Core Basis:	 def2svp
+	      Full Basis:	 def2svp
+	      DIIS (start, space):	 0 50
+	      Level shift:	 0
+	      Do localization?:	 True
+	      Atoms that were localized?:	 ['C']
+	      Do SFX2C1E?:	 True
+	      Freeze orbitals?:	 True
+	      Use Cheng orbitals?:	 False
+	      Do Special Basis?:	 False
+	*********************************************** 
+	*********************************************** 
+
+  >>> Running RHF <<<
+
+init D/C      : minao
+init ov       : zeros
+no            : 7
+nv            : 31
+ov_size       : 217
+max_cycle     : 1000
+conv          : 6
+econv         : 9
+method        : gdm
+scale_stop    : 0
+scale_factor  : 1.000000
+init E        : -76.7397053517316
+init |[F,P]|  : 1.51e-02
+init |dE|     : 3.26e-02
+check file    : None
+
+iter      total energy   |[F,P]|      |dE|         ∆E   comment
+   1     -76.760898003  3.38e-03  7.34e-03  -2.12e-02  BFGS
+   2     -76.762194417  2.27e-04  6.54e-04  -1.30e-03  BFGS
+   3     -76.762202504  7.14e-05  1.82e-04  -8.09e-06  BFGS
+   4     -76.762203132  1.46e-05  3.50e-05  -6.28e-07  BFGS
+   5     -76.762203156  3.12e-06  7.52e-06  -2.36e-08  BFGS
+   6     -76.762203157  1.91e-07  6.13e-07  -1.12e-09  BFGS
+   7     -76.762203157  3.74e-08  1.34e-07  -7.79e-12  BFGS
+                                                                      gdm is converged!
+
+SCF converged : True
+final |[F,P]| : 3.74e-08
+final |dE|    : 1.34e-07
+final Escf    : -101.538104946937
+final Etot    : -76.76220315691
+
+  pxp & ewc             :::        0.010 ( 42.27%)
+  apply B               :::        0.001 (  3.33%)
+  linsrch               :::        0.012 ( 50.57%)
+  grad                  :::        0.001 (  3.84%)
+  Total                 :::        0.025 (100.00%)
+
+Alpha occupied
+  -11.248 -11.244  -1.016  -0.758  -0.679  -0.411  -0.411 
+
+Alpha virtual
+    0.197   0.197   0.200   0.227   0.421   0.437   0.674   0.674 
+    0.825   0.836   0.836   0.848   1.116   1.199   1.442   1.442 
+    1.535   1.800   1.800   1.805   1.805   2.240   2.240   2.267 
+    2.297   2.297   2.682   3.210   3.210   3.492   4.407 
+
+
+  >>> Running RHF-MP2 <<<
+
+
+RMP2-TIMING
+  rmp2                  :::        0.005 (100.00%)
+  Total                 :::        0.005 (100.00%)
+
+MP2 correlation energy (RHF) : -0.2617969918
+MP2 total energy       (RHF) : -77.0240001488
+
+
+  >>> Running RHF-MP2 <<<
+
+
+RMP2-TIMING
+  rmp2                  :::        0.005 (100.00%)
+  Total                 :::        0.005 (100.00%)
+
+MP2 correlation energy (RHF) : -0.2617969918
+MP2 total energy       (RHF) : -77.0240001488
+
+
+  >>> Running RHF-MP3 <<<
+
+Building eris, 2022-11-27 11:55:44
+Initing amps, 2022-11-27 11:55:44
+Starting einsum calculation, 2022-11-27 11:55:44
+Finished einsum calculation, 2022-11-27 11:55:44
+
+RMP3-TIMING
+  rmp3                  :::        0.034 (100.00%)
+  Total                 :::        0.034 (100.00%)
+
+MP3 correlation energy       (RHF) : -0.0110783807
+MP2 + MP3 correlation energy (RHF) : -0.2728753726
+MP3 total energy             (RHF) : -77.0350785295
+
+
+  >>> Running RHF-CCSD <<<
+
+
+******** <class 'pyscf.cc.ccsd.CCSD'> ********
+CC2 = 0
+CCSD nocc = 7, nmo = 38
+frozen orbitals 0
+max_cycle = 50
+direct = 0
+conv_tol = 1e-08
+conv_tol_normt = 1e-06
+diis_space = 6
+diis_start_cycle = 0
+diis_start_energy_diff = 1e+09
+max_memory 4000 MB (current use 193 MB)
+    CPU time for CCSD integral transformation      0.11 sec, wall time      0.01 sec
+Init t2, MP2 energy = -77.0240001487597  E_corr(MP2) -0.261796991849663
+    CPU time for init mp2      0.01 sec, wall time      0.00 sec
+Init E_corr(CCSD) = -0.261796991849933
+cycle = 1  E_corr(CCSD) = -0.266730930709464  dE = -0.00493393886  norm(t1,t2) = 0.0460459
+    CPU time for CCSD iter      0.44 sec, wall time      0.06 sec
+cycle = 2  E_corr(CCSD) = -0.275184071465893  dE = -0.00845314076  norm(t1,t2) = 0.0176963
+    CPU time for CCSD iter      0.52 sec, wall time      0.07 sec
+cycle = 3  E_corr(CCSD) = -0.277027027339638  dE = -0.00184295587  norm(t1,t2) = 0.00799026
+    CPU time for CCSD iter      0.52 sec, wall time      0.07 sec
+cycle = 4  E_corr(CCSD) = -0.278195001316457  dE = -0.00116797398  norm(t1,t2) = 0.00305437
+    CPU time for CCSD iter      0.52 sec, wall time      0.06 sec
+cycle = 5  E_corr(CCSD) = -0.278118275963568  dE = 7.67253529e-05  norm(t1,t2) = 0.000809738
+    CPU time for CCSD iter      0.52 sec, wall time      0.07 sec
+cycle = 6  E_corr(CCSD) = -0.278133183069513  dE = -1.49071059e-05  norm(t1,t2) = 0.000130107
+    CPU time for CCSD iter      0.51 sec, wall time      0.06 sec
+cycle = 7  E_corr(CCSD) = -0.27813758379706  dE = -4.40072755e-06  norm(t1,t2) = 3.37694e-05
+    CPU time for CCSD iter      0.51 sec, wall time      0.06 sec
+cycle = 8  E_corr(CCSD) = -0.278137159663689  dE = 4.24133371e-07  norm(t1,t2) = 6.99234e-06
+    CPU time for CCSD iter      0.49 sec, wall time      0.06 sec
+cycle = 9  E_corr(CCSD) = -0.278136997260529  dE = 1.6240316e-07  norm(t1,t2) = 2.12658e-06
+    CPU time for CCSD iter      0.50 sec, wall time      0.06 sec
+cycle = 10  E_corr(CCSD) = -0.278137014761662  dE = -1.75011328e-08  norm(t1,t2) = 4.36029e-07
+    CPU time for CCSD iter      0.49 sec, wall time      0.06 sec
+cycle = 11  E_corr(CCSD) = -0.278137022094426  dE = -7.33276484e-09  norm(t1,t2) = 1.33755e-07
+    CPU time for CCSD iter      0.49 sec, wall time      0.06 sec
+    CPU time for CCSD      5.50 sec, wall time      0.69 sec
+CCSD converged
+E(CCSD) = -77.04034017900447  E_corr = -0.2781370220944264
+
+TIMESTAMP: Starting to do the (T) correction at 2022-11-27 11:55:45
+    CPU time for CCSD integral transformation      0.17 sec, wall time      0.02 sec
+max_memory 3774 MB (225 MB in use)
+    CPU time for CCSD(T)      0.93 sec, wall time      0.12 sec
+CCSD(T) correction = -0.0112146782283413
+CCSD correlation energy    (RHF) : -0.2781370221
+CCSD total energy          (RHF) : -77.0403401790
+
+CCSD(T) correlation energy (RHF) : -0.2893517003
+CCSD(T) total energy       (RHF) : -77.0515548572
+
+T1 Diagnostic              (RHF) : 0.01143
+
+
+  >>> Running UHF <<<
+
+init D/C      : input mo_coeff
+init ov       : zeros
+no            : 6 7
+nv            : 32 31
+ov_size       : 409
+max_cycle     : 1000
+conv          : 6
+econv         : 9
+method        : diis
+mom_start     : 0
+guess mix     : 0.000000
+orb_swap      : [[[0, 6]], []]
+init E        : -65.5515914744144
+init S2       : 0.75000000000002
+init |[F,P]|  : 6.39e-02
+init |dE|     : 1.65e-01
+check file    : None
+
+iter      total energy   |[F,P]|      |dE|         ∆E   S^2   comment
+   1     -65.784648751  3.00e-02  9.03e-02  -2.33e-01  0.75  DIIS mom: 5.7/6 6.6/7
+   2     -65.963945039  1.11e-02  3.05e-02  -1.79e-01  0.76  DIIS mom: 5.9/6 6.9/7
+   3     -65.986840151  1.51e-03  3.77e-03  -2.29e-02  0.76  DIIS mom: 6.0/6 7.0/7
+   4     -65.988146944  1.33e-03  3.30e-03  -1.31e-03  0.77  DIIS mom: 6.0/6 7.0/7
+   5     -65.989940620  1.26e-03  3.08e-03  -1.79e-03  0.79  DIIS mom: 6.0/6 7.0/7
+   6     -65.995151646  1.04e-03  2.54e-03  -5.21e-03  0.90  DIIS mom: 6.0/6 7.0/7
+   7     -65.998029163  9.60e-04  2.52e-03  -2.88e-03  1.30  DIIS mom: 6.0/6 7.0/7
+   8     -65.998286753  5.82e-04  1.54e-03  -2.58e-04  1.06  DIIS mom: 6.0/6 7.0/7
+   9     -65.998840363  1.57e-04  4.10e-04  -5.54e-04  1.14  DIIS mom: 6.0/6 7.0/7
+  10     -65.998876800  2.89e-05  7.23e-05  -3.64e-05  1.17  DIIS mom: 6.0/6 7.0/7
+  11     -65.998878390  2.13e-06  5.44e-06  -1.59e-06  1.17  DIIS mom: 6.0/6 7.0/7
+  12     -65.998878382  2.62e-06  6.85e-06   8.20e-09  1.17  DIIS mom: 6.0/6 7.0/7
+  13     -65.998878393  1.23e-07  3.38e-07  -1.18e-08  1.17  DIIS mom: 6.0/6 7.0/7
+  14     -65.998878393  1.69e-07  4.55e-07   2.58e-11  1.17  DIIS mom: 6.0/6 7.0/7
+                                                                      diis is converged!
+
+SCF converged : True
+final |[F,P]| : 1.69e-07
+final |dE|    : 4.55e-07
+final Escf    : -90.7747801834076
+final Etot    : -65.9988783933804
+final S2      : 1.16903724230093
+
+  diis prep             :::        0.001 (  2.38%)
+  diis extrap           :::        0.005 (  8.75%)
+  roothaan              :::        0.016 ( 25.90%)
+  fock build            :::        0.039 ( 62.96%)
+  Total                 :::        0.062 (100.00%)
+
+Alpha occupied
+  -11.684  -1.455  -1.122  -1.065  -0.809  -0.809 
+
+Alpha virtual
+  -10.285  -0.145  -0.145  -0.041  -0.019   0.123   0.157   0.321 
+    0.321   0.460   0.460   0.490   0.533   0.807   0.826   1.107 
+    1.107   1.205   1.432   1.432   1.488   1.488   1.882   1.882 
+    1.920   1.944   1.944   2.287   2.840   2.840   3.092   3.976 
+
+Beta occupied
+  -13.859 -11.656  -1.523  -1.175  -1.059  -0.906  -0.906 
+
+Beta virtual
+   -0.137  -0.137  -0.057  -0.016   0.123   0.163   0.282   0.282 
+    0.446   0.485   0.485   0.538   0.775   0.835   1.108   1.108 
+    1.203   1.432   1.432   1.491   1.491   1.868   1.868   1.913 
+    1.940   1.940   2.268   2.830   2.830   3.071   3.938 
+
+  SA 0  : 1 (1.00)    SB 0  : 0 (1.00)
+  SA 1  : 2 (0.31) 5 (0.31) 6 (0.31)    SB 1  : 1 (1.00)
+  SA 2  : 3 (0.63) 4 (0.36)    SB 2  : 2 (0.28) 3 (0.13) 5 (0.28) 6 (0.28)
+  SA 3  : 3 (0.33) 4 (0.58)    SB 3  : 3 (0.77)
+  SA 4  : 2 (0.59) 6 (0.36)    SB 4  : 4 (0.92)
+  SA 5  : 5 (0.63) 6 (0.29)    SB 5  : 5 (0.53) 6 (0.24)
+  SB 6  : 2 (0.49) 6 (0.31)
+
+The transition for spin alpha is from 5 (0.00) to 1 (0.99).
+The transition for spin beta  is from 4 (0.87) 1 (0.87) 0 (0.87) to 1 (0.10) 2 (0.10).
+
+
+
+  >>> Running UHF-MP2 <<<
+
+MP2 correlation energy (UHF) : -0.2346309742
+MP2 total energy       (UHF) : -66.2335093676
+
+
+  >>> Running UHF-MP2 <<<
+
+MP2 correlation energy (UHF) : -0.2346309742
+MP2 total energy       (UHF) : -66.2335093676
+
+
+  >>> Running UHF-MP3 <<<
+
+Building eris, 2022-11-27 11:55:46
+Within _make_eris, 2022-11-27 11:55:46
+First if block, starting, 2022-11-27 11:55:46
+First if block, finished, 2022-11-27 11:55:46
+Initing amps, 2022-11-27 11:55:46
+Starting einsum calculation, 2022-11-27 11:55:46
+Finished einsum calculation, 2022-11-27 11:55:46
+MP3 correlation energy       (UHF) : -0.0179068483
+MP2 + MP3 correlation energy (UHF) : -0.2525378225
+MP3 total energy             (UHF) : -66.2514162159
+
+
+  >>> Running UHF-CCSD <<<
+
+
+******** <class 'pyscf.cc.uccsd.UCCSD'> ********
+CC2 = 0
+CCSD nocc = (6, 7), nmo = (37, 38)
+frozen orbitals [[6], []]
+max_cycle = 50
+direct = 0
+conv_tol = 1e-08
+conv_tol_normt = 1e-06
+diis_space = 20
+diis_start_cycle = 0
+diis_start_energy_diff = 1e+09
+max_memory 4000 MB (current use 221 MB)
+Init t2, MP2 energy = -0.234630974178002
+    CPU time for init mp2      0.01 sec, wall time      0.00 sec
+Init E_corr(CCSD) = -0.234630974186672
+cycle = 1  E_corr(CCSD) = -0.248428617498367  dE = -0.0137976433  norm(t1,t2) = 0.0942323
+    CPU time for CCSD iter      0.66 sec, wall time      0.08 sec
+cycle = 2  E_corr(CCSD) = -0.259092606526906  dE = -0.010663989  norm(t1,t2) = 0.0503737
+    CPU time for CCSD iter      0.68 sec, wall time      0.08 sec
+cycle = 3  E_corr(CCSD) = -0.267482415711772  dE = -0.00838980918  norm(t1,t2) = 0.0388624
+    CPU time for CCSD iter      0.65 sec, wall time      0.08 sec
+cycle = 4  E_corr(CCSD) = -0.274389234562481  dE = -0.00690681885  norm(t1,t2) = 0.0184215
+    CPU time for CCSD iter      0.65 sec, wall time      0.08 sec
+cycle = 5  E_corr(CCSD) = -0.273633351902439  dE = 0.00075588266  norm(t1,t2) = 0.00554666
+    CPU time for CCSD iter      0.65 sec, wall time      0.08 sec
+cycle = 6  E_corr(CCSD) = -0.273967522201138  dE = -0.000334170299  norm(t1,t2) = 0.00121903
+    CPU time for CCSD iter      0.65 sec, wall time      0.08 sec
+cycle = 7  E_corr(CCSD) = -0.273871310735404  dE = 9.62114657e-05  norm(t1,t2) = 0.000412414
+    CPU time for CCSD iter      0.65 sec, wall time      0.08 sec
+cycle = 8  E_corr(CCSD) = -0.273866086279094  dE = 5.22445631e-06  norm(t1,t2) = 0.000115178
+    CPU time for CCSD iter      0.66 sec, wall time      0.08 sec
+cycle = 9  E_corr(CCSD) = -0.273866444971815  dE = -3.58692721e-07  norm(t1,t2) = 3.59561e-05
+    CPU time for CCSD iter      0.65 sec, wall time      0.08 sec
+cycle = 10  E_corr(CCSD) = -0.273866579772114  dE = -1.34800299e-07  norm(t1,t2) = 1.06361e-05
+    CPU time for CCSD iter      0.66 sec, wall time      0.08 sec
+cycle = 11  E_corr(CCSD) = -0.273866444569926  dE = 1.35202188e-07  norm(t1,t2) = 3.52575e-06
+    CPU time for CCSD iter      0.66 sec, wall time      0.08 sec
+cycle = 12  E_corr(CCSD) = -0.273866408940021  dE = 3.5629905e-08  norm(t1,t2) = 1.12101e-06
+    CPU time for CCSD iter      0.66 sec, wall time      0.08 sec
+cycle = 13  E_corr(CCSD) = -0.273866455253915  dE = -4.63138944e-08  norm(t1,t2) = 2.57048e-07
+    CPU time for CCSD iter      0.66 sec, wall time      0.08 sec
+Linear dependence found in DIIS error vectors.
+cycle = 14  E_corr(CCSD) = -0.27386645646039  dE = -1.2064752e-09  norm(t1,t2) = 6.97513e-08
+    CPU time for CCSD iter      0.67 sec, wall time      0.08 sec
+    CPU time for CCSD      9.24 sec, wall time      1.16 sec
+UCCSD converged
+E(UCCSD) = -66.27274484984083  E_corr = -0.2738664564603903
+
+TIMESTAMP: Starting to do the (T) correction at 2022-11-27 11:55:47
+max_memory 3690 MB (309 MB in use)
+max_memory 3690 MB (309 MB in use)
+    CPU time for UCCSD(T)      3.25 sec, wall time      0.41 sec
+UCCSD(T) correction = -0.0101564464066865
+CCSD correlation energy    (UHF) : -0.2738664565
+CCSD total energy          (UHF) : -66.2727448498
+
+CCSD(T) correlation energy (UHF) : -0.2840229029
+CCSD(T) total energy       (UHF) : -66.2829012962
+
+T1 Diagnostic             (UHF) : 0.06065 0.08110
+

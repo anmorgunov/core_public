@@ -1,0 +1,75 @@
+Traceback (most recent call last):
+  File "/home/am3939/core/calculations/run_mom.py", line 1, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+Traceback (most recent call last):
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/ao2mo/outcore.py", line 324, in general
+    async_write(icomp, row0, row1, outbuf)
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/lib/misc.py", line 1076, in async_fn
+    raise ThreadRuntimeError('Error on thread %s:\n%s'
+pyscf.lib.misc.ThreadRuntimeError: Error on thread <pyscf.lib.misc.call_in_background object at 0x14d470502da0>:
+[Errno 28] Can't synchronously write data (file write failed: time = Fri May 10 18:38:24 2024
+, filename = '/tmp/tmp1ww5gbod', file descriptor = 51, errno = 28, error message = 'No space left on device', buf = 0x14d2bd1b2398, total write size = 44136, bytes this sub-write = 44136, bytes actually written = 18446744073709551615, offset = 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/lib/misc.py", line 1094, in __exit__
+    handler.result()
+  File "/vast/palmer/apps/avx2/software/Python/3.10.8-GCCcore-12.2.0/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+    return self.__get_result()
+  File "/vast/palmer/apps/avx2/software/Python/3.10.8-GCCcore-12.2.0/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/lib/misc.py", line 1074, in async_fn
+    handlers[i].result()
+  File "/vast/palmer/apps/avx2/software/Python/3.10.8-GCCcore-12.2.0/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+    return self.__get_result()
+  File "/vast/palmer/apps/avx2/software/Python/3.10.8-GCCcore-12.2.0/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+  File "/vast/palmer/apps/avx2/software/Python/3.10.8-GCCcore-12.2.0/lib/python3.10/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/ao2mo/outcore.py", line 288, in save
+    h5d_eri[row0:row1] = buf[:row1-row0]
+  File "h5py/_objects.pyx", line 54, in h5py._objects.with_phil.wrapper
+  File "h5py/_objects.pyx", line 55, in h5py._objects.with_phil.wrapper
+  File "/vast/palmer/apps/avx2/software/h5py/3.8.0-foss-2022b/lib/python3.10/site-packages/h5py/_hl/dataset.py", line 1009, in __setitem__
+    self.id.write(mspace, fspace, val, mtype, dxpl=self._dxpl)
+  File "h5py/_objects.pyx", line 54, in h5py._objects.with_phil.wrapper
+  File "h5py/_objects.pyx", line 55, in h5py._objects.with_phil.wrapper
+  File "h5py/h5d.pyx", line 280, in h5py.h5d.DatasetID.write
+  File "h5py/_proxy.pyx", line 114, in h5py._proxy.dset_rw
+OSError: [Errno 28] Can't synchronously write data (file write failed: time = Fri May 10 18:38:24 2024
+, filename = '/tmp/tmp1ww5gbod', file descriptor = 51, errno = 28, error message = 'No space left on device', buf = 0x14d2bd1b2398, total write size = 44136, bytes this sub-write = 44136, bytes actually written = 18446744073709551615, offset = 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/am3939/core/calculations/run_mom.py", line 416, in <module>
+    predictor.run() 
+  File "/home/am3939/core/calculations/run_mom.py", line 360, in run
+    self._do_uccsd(triples=self.doTriples)
+  File "/home/am3939/core/calculations/run_mom.py", line 276, in _do_uccsd
+    self.umf_core.do_ccsd(do_ccsd_t=triples, do_t1_diagn=self.DO_T1_DIAGN, verbose=self.VERBOSITY, frozen=self.freeze_orbs)
+  File "/home/am3939/core/dmp2/sgscf/uhf.py", line 465, in do_ccsd
+    mf.e_corr_ccsd = mcc.kernel(eris=eris, t1=t1, t2=t2)[0]
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/cc/uccsd.py", line 599, in kernel
+    return self.ccsd(t1, t2, eris, mbpt2)
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/cc/uccsd.py", line 615, in ccsd
+    return ccsd.CCSDBase.ccsd(self, t1, t2, eris)
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/cc/ccsd.py", line 1080, in ccsd
+    eris = self.ao2mo(self.mo_coeff)
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/cc/uccsd.py", line 698, in ao2mo
+    return _make_eris_outcore(self, mo_coeff)
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/cc/uccsd.py", line 1163, in _make_eris_outcore
+    ao2mo.full(mol, orbvb, eris.feri, dataname='VVVV')
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/ao2mo/__init__.py", line 153, in full
+    return mod.full(eri_or_mol, mo_coeff, erifile, dataname, intor,
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/ao2mo/outcore.py", line 110, in full
+    general(mol, (mo_coeff,)*4, erifile, dataname,
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/ao2mo/outcore.py", line 309, in general
+    with lib.call_in_background(save) as async_write:
+  File "/vast/palmer/apps/avx2/software/PySCF/2.4.0-foss-2022b/lib/python3.10/site-packages/pyscf/lib/misc.py", line 1096, in __exit__
+    raise ThreadRuntimeError('Error on thread %s:\n%s' % (self, e))
+pyscf.lib.misc.ThreadRuntimeError: Error on thread <pyscf.lib.misc.call_in_background object at 0x14d470502da0>:
+[Errno 28] Can't synchronously write data (file write failed: time = Fri May 10 18:38:24 2024
+, filename = '/tmp/tmp1ww5gbod', file descriptor = 51, errno = 28, error message = 'No space left on device', buf = 0x14d2bd1b2398, total write size = 44136, bytes this sub-write = 44136, bytes actually written = 18446744073709551615, offset = 0)

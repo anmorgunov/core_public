@@ -1,0 +1,626 @@
+	*********************************************** 
+	***** Beginning CEBE Calculation with MOM ***** 
+	*****       Calculation Details:          ***** 
+	      Geometry:	 /work/morgunov/core/calculations/mols/exp/o/h2o.xyz
+	      Core Basis:	 cc-pCVDZ
+	      Full Basis:	 cc-pVDZ
+	      Do SFX2C1E?:	 True
+	      Freeze orbitals?:	 True
+	      Use Cheng orbitals?:	 False
+	      Do Special Basis?:	 False
+	*********************************************** 
+	*********************************************** 
+
+  >>> Running RHF <<<
+
+init D/C      : minao
+init ov       : zeros
+no            : 5
+nv            : 23
+ov_size       : 115
+max_cycle     : 1000
+conv          : 6
+econv         : 9
+method        : gdm
+scale_stop    : 0
+scale_factor  : 1.000000
+init E        : -75.9887159005212
+init |[F,P]|  : 3.07e-02
+init |dE|     : 8.42e-02
+check file    : None
+
+iter      total energy   |[F,P]|      |dE|         ∆E   comment
+   1     -76.017865608  1.59e-02  4.48e-02  -2.91e-02  BFGS
+   2     -76.027055899  1.65e-03  4.10e-03  -9.19e-03  BFGS
+   3     -76.027166986  3.63e-04  9.04e-04  -1.11e-04  BFGS
+   4     -76.027176408  4.84e-05  1.46e-04  -9.42e-06  BFGS
+   5     -76.027176630  1.37e-05  3.81e-05  -2.22e-07  BFGS
+   6     -76.027176647  1.94e-06  5.40e-06  -1.70e-08  BFGS
+   7     -76.027176647  4.42e-07  1.29e-06  -2.69e-10  BFGS
+                                                                      gdm is converged!
+
+SCF converged : True
+final |[F,P]| : 4.42e-07
+final |dE|    : 1.29e-06
+final Escf    : -85.2167104100549
+final Etot    : -76.02717664712
+
+  pxp & ewc             :::        0.010 ( 41.39%)
+  apply B               :::        0.001 (  4.95%)
+  linsrch               :::        0.012 ( 49.06%)
+  grad                  :::        0.001 (  4.60%)
+  Total                 :::        0.024 (100.00%)
+
+Alpha occupied
+  -20.550  -1.336  -0.699  -0.567  -0.493 
+
+Alpha virtual
+    0.185   0.256   0.789   0.853   1.162   1.198   1.252   1.437 
+    1.476   1.674   1.791   1.934   2.447   2.479   3.285   3.338 
+    3.509   3.860   4.147  34.381  39.186  39.653  39.909 
+
+
+  >>> Running RHF-MP2 <<<
+
+
+RMP2-TIMING
+  rmp2                  :::        0.003 (100.00%)
+  Total                 :::        0.003 (100.00%)
+
+MP2 correlation energy (RHF) : -0.2413703303
+MP2 total energy       (RHF) : -76.2685469774
+
+
+  >>> Running RHF-MP2 <<<
+
+
+RMP2-TIMING
+  rmp2                  :::        0.002 (100.00%)
+  Total                 :::        0.002 (100.00%)
+
+MP2 correlation energy (RHF) : -0.2413703303
+MP2 total energy       (RHF) : -76.2685469774
+
+
+  >>> Running RHF-MP3 <<<
+
+
+RMP3-TIMING
+  rmp3                  :::        0.058 (100.00%)
+  Total                 :::        0.058 (100.00%)
+
+MP3 correlation energy       (RHF) : -0.0078316365
+MP2 + MP3 correlation energy (RHF) : -0.2492019668
+MP3 total energy             (RHF) : -76.2763786139
+
+
+  >>> Running RHF-CCSD <<<
+
+
+******** <class 'pyscf.cc.ccsd.CCSD'> ********
+CC2 = 0
+CCSD nocc = 5, nmo = 28
+frozen orbitals 0
+max_cycle = 50
+direct = 0
+conv_tol = 1e-08
+conv_tol_normt = 1e-06
+diis_space = 6
+diis_start_cycle = 0
+diis_start_energy_diff = 1e+09
+max_memory 4000 MB (current use 112 MB)
+    CPU time for CCSD integral transformation      0.07 sec, wall time      0.01 sec
+Init t2, MP2 energy = -76.2685469774274  E_corr(MP2) -0.241370330307408
+    CPU time for init mp2      0.00 sec, wall time      0.00 sec
+Init E_corr(CCSD) = -0.241370330320985
+cycle = 1  E_corr(CCSD) = -0.247253629081141  dE = -0.00588329876  norm(t1,t2) = 0.0214756
+    CPU time for CCSD iter      0.92 sec, wall time      0.11 sec
+cycle = 2  E_corr(CCSD) = -0.250631993930652  dE = -0.00337836485  norm(t1,t2) = 0.00751314
+    CPU time for CCSD iter      0.42 sec, wall time      0.05 sec
+cycle = 3  E_corr(CCSD) = -0.251671556418212  dE = -0.00103956249  norm(t1,t2) = 0.00283733
+    CPU time for CCSD iter      0.40 sec, wall time      0.05 sec
+cycle = 4  E_corr(CCSD) = -0.251815002156893  dE = -0.000143445739  norm(t1,t2) = 0.000532086
+    CPU time for CCSD iter      0.41 sec, wall time      0.05 sec
+cycle = 5  E_corr(CCSD) = -0.251797141202408  dE = 1.78609545e-05  norm(t1,t2) = 0.000183905
+    CPU time for CCSD iter      0.41 sec, wall time      0.05 sec
+cycle = 6  E_corr(CCSD) = -0.251792280842599  dE = 4.86035981e-06  norm(t1,t2) = 5.26664e-05
+    CPU time for CCSD iter      0.41 sec, wall time      0.05 sec
+cycle = 7  E_corr(CCSD) = -0.251794251122337  dE = -1.97027974e-06  norm(t1,t2) = 1.71386e-05
+    CPU time for CCSD iter      0.41 sec, wall time      0.05 sec
+cycle = 8  E_corr(CCSD) = -0.251793592276997  dE = 6.58845341e-07  norm(t1,t2) = 3.10399e-06
+    CPU time for CCSD iter      0.41 sec, wall time      0.05 sec
+cycle = 9  E_corr(CCSD) = -0.251793573421372  dE = 1.88556246e-08  norm(t1,t2) = 8.5598e-07
+    CPU time for CCSD iter      0.40 sec, wall time      0.05 sec
+cycle = 10  E_corr(CCSD) = -0.251793561386146  dE = 1.20352258e-08  norm(t1,t2) = 1.33303e-07
+    CPU time for CCSD iter      0.41 sec, wall time      0.05 sec
+Linear dependence found in DIIS error vectors.
+cycle = 11  E_corr(CCSD) = -0.251793561514272  dE = -1.28125899e-10  norm(t1,t2) = 2.9742e-08
+    CPU time for CCSD iter      0.43 sec, wall time      0.05 sec
+    CPU time for CCSD      5.02 sec, wall time      0.63 sec
+CCSD converged
+E(CCSD) = -76.27897020863425  E_corr = -0.2517935615142721
+CCSD correlation energy    (RHF) : -0.2517935615
+CCSD total energy          (RHF) : -76.2789702086
+
+T1 Diagnostic              (RHF) : 0.00527
+
+
+  >>> Running RHF-CCSD <<<
+
+
+******** <class 'pyscf.cc.ccsd.CCSD'> ********
+CC2 = 0
+CCSD nocc = 5, nmo = 28
+frozen orbitals 0
+max_cycle = 50
+direct = 0
+conv_tol = 1e-08
+conv_tol_normt = 1e-06
+diis_space = 6
+diis_start_cycle = 0
+diis_start_energy_diff = 1e+09
+max_memory 4000 MB (current use 122 MB)
+    CPU time for CCSD integral transformation      0.23 sec, wall time      0.03 sec
+Init t2, MP2 energy = -76.2685469774274  E_corr(MP2) -0.241370330307408
+    CPU time for init mp2      0.00 sec, wall time      0.00 sec
+Init E_corr(CCSD) = -0.241370330320985
+cycle = 1  E_corr(CCSD) = -0.247253629081141  dE = -0.00588329876  norm(t1,t2) = 0.0214756
+    CPU time for CCSD iter      0.43 sec, wall time      0.05 sec
+cycle = 2  E_corr(CCSD) = -0.250631993930652  dE = -0.00337836485  norm(t1,t2) = 0.00751314
+    CPU time for CCSD iter      0.41 sec, wall time      0.05 sec
+cycle = 3  E_corr(CCSD) = -0.251671556418212  dE = -0.00103956249  norm(t1,t2) = 0.00283733
+    CPU time for CCSD iter      0.40 sec, wall time      0.05 sec
+cycle = 4  E_corr(CCSD) = -0.251815002156893  dE = -0.000143445739  norm(t1,t2) = 0.000532086
+    CPU time for CCSD iter      0.40 sec, wall time      0.05 sec
+cycle = 5  E_corr(CCSD) = -0.251797141202409  dE = 1.78609545e-05  norm(t1,t2) = 0.000183905
+    CPU time for CCSD iter      0.39 sec, wall time      0.05 sec
+cycle = 6  E_corr(CCSD) = -0.251792280842599  dE = 4.86035981e-06  norm(t1,t2) = 5.26664e-05
+    CPU time for CCSD iter      0.39 sec, wall time      0.05 sec
+cycle = 7  E_corr(CCSD) = -0.251794251122337  dE = -1.97027974e-06  norm(t1,t2) = 1.71386e-05
+    CPU time for CCSD iter      0.57 sec, wall time      0.07 sec
+cycle = 8  E_corr(CCSD) = -0.251793592276997  dE = 6.58845341e-07  norm(t1,t2) = 3.10399e-06
+    CPU time for CCSD iter      0.35 sec, wall time      0.04 sec
+cycle = 9  E_corr(CCSD) = -0.251793573421372  dE = 1.88556248e-08  norm(t1,t2) = 8.5598e-07
+    CPU time for CCSD iter      0.38 sec, wall time      0.05 sec
+cycle = 10  E_corr(CCSD) = -0.251793561386146  dE = 1.20352257e-08  norm(t1,t2) = 1.33303e-07
+    CPU time for CCSD iter      0.35 sec, wall time      0.04 sec
+Linear dependence found in DIIS error vectors.
+cycle = 11  E_corr(CCSD) = -0.251793561514272  dE = -1.28126065e-10  norm(t1,t2) = 2.9742e-08
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+    CPU time for CCSD      4.40 sec, wall time      0.55 sec
+CCSD converged
+E(CCSD) = -76.27897020863425  E_corr = -0.2517935615142721
+    CPU time for CCSD integral transformation      0.11 sec, wall time      0.01 sec
+max_memory 3875 MB (124 MB in use)
+    CPU time for CCSD(T)      0.46 sec, wall time      0.06 sec
+CCSD(T) correction = -0.00329176677852215
+CCSD correlation energy    (RHF) : -0.2517935615
+CCSD total energy          (RHF) : -76.2789702086
+
+CCSD(T) correlation energy (RHF) : -0.2550853283
+CCSD(T) total energy       (RHF) : -76.2822619754
+
+T1 Diagnostic              (RHF) : 0.00527
+
+
+  >>> Running UHF <<<
+
+init D/C      : input mo_coeff
+init ov       : zeros
+no            : 4 5
+nv            : 24 23
+ov_size       : 211
+max_cycle     : 1000
+conv          : 6
+econv         : 9
+method        : diis
+mom_start     : 0
+guess mix     : 0.000000
+orb_swap      : [[[0, 4]], []]
+init E        : -55.4775397601388
+init S2       : 0.750000000000025
+init |[F,P]|  : 1.12e-01
+init |dE|     : 3.98e-01
+check file    : None
+
+iter      total energy   |[F,P]|      |dE|         ∆E   S^2   comment
+   1     -56.032657275  5.02e-02  1.47e-01  -5.55e-01  0.75  DIIS mom: 3.8/4 4.7/5
+   2     -56.179976876  2.26e-03  8.12e-03  -1.47e-01  0.75  DIIS mom: 4.0/4 5.0/5
+   3     -56.180720844  1.14e-03  3.23e-03  -7.44e-04  0.76  DIIS mom: 4.0/4 5.0/5
+   4     -56.181020829  5.14e-04  1.39e-03  -3.00e-04  0.76  DIIS mom: 4.0/4 5.0/5
+   5     -56.181093575  9.01e-05  2.63e-04  -7.27e-05  0.76  DIIS mom: 4.0/4 5.0/5
+   6     -56.181095621  2.04e-05  6.58e-05  -2.05e-06  0.76  DIIS mom: 4.0/4 5.0/5
+   7     -56.181095735  3.79e-06  1.24e-05  -1.14e-07  0.76  DIIS mom: 4.0/4 5.0/5
+   8     -56.181095739  6.00e-07  1.81e-06  -3.42e-09  0.76  DIIS mom: 4.0/4 5.0/5
+   9     -56.181095739  1.15e-07  3.09e-07  -7.31e-11  0.76  DIIS mom: 4.0/4 5.0/5
+                                                                      diis is converged!
+
+SCF converged : True
+final |[F,P]| : 1.15e-07
+final |dE|    : 3.09e-07
+final Escf    : -65.3706295015502
+final Etot    : -56.1810957386153
+final S2      : 0.764595418817934
+
+  diis prep             :::        0.001 (  1.17%)
+  diis extrap           :::        0.004 (  3.60%)
+  roothaan              :::        0.034 ( 30.01%)
+  fock build            :::        0.074 ( 65.23%)
+  Total                 :::        0.114 (100.00%)
+
+Alpha occupied
+   -1.911  -1.271  -1.160  -1.106 
+
+Alpha virtual
+  -19.147  -0.158  -0.087   0.371   0.411   0.643   0.664   0.781 
+    1.011   1.053   1.259   1.321   1.516   1.940   1.974   2.809 
+    2.860   3.029   3.368   3.649  32.537  37.074  37.548  37.808 
+
+Beta occupied
+  -24.028  -2.027  -1.333  -1.235  -1.184 
+
+Beta virtual
+   -0.171  -0.100   0.374   0.399   0.597   0.637   0.752   0.995 
+    1.065   1.269   1.284   1.524   1.919   1.947   2.800   2.848 
+    3.017   3.352   3.628  31.514  36.261  36.743  37.006 
+
+
+  >>> Running UHF-MP2 <<<
+
+MP2 correlation energy (UHF) : -0.1844950684
+MP2 total energy       (UHF) : -56.3655908071
+
+
+  >>> Running UHF-MP2 <<<
+
+MP2 correlation energy (UHF) : -0.1844950684
+MP2 total energy       (UHF) : -56.3655908071
+
+
+  >>> Running UHF-MP3 <<<
+
+MP3 correlation energy       (UHF) : -0.0070307189
+MP2 + MP3 correlation energy (UHF) : -0.1915257873
+MP3 total energy             (UHF) : -56.3726215260
+
+
+  >>> Running UHF-CCSD <<<
+
+
+******** <class 'pyscf.cc.uccsd.UCCSD'> ********
+CC2 = 0
+CCSD nocc = (4, 5), nmo = (27, 28)
+frozen orbitals [[4], []]
+max_cycle = 50
+direct = 0
+conv_tol = 1e-08
+conv_tol_normt = 1e-06
+diis_space = 20
+diis_start_cycle = 0
+diis_start_energy_diff = 1e+09
+max_memory 4000 MB (current use 122 MB)
+Init t2, MP2 energy = -0.184495068435558
+    CPU time for init mp2      0.01 sec, wall time      0.00 sec
+Init E_corr(CCSD) = -0.184495068436924
+cycle = 1  E_corr(CCSD) = -0.190003673145265  dE = -0.00550860471  norm(t1,t2) = 0.0353348
+    CPU time for CCSD iter      0.36 sec, wall time      0.05 sec
+cycle = 2  E_corr(CCSD) = -0.192836374166687  dE = -0.00283270102  norm(t1,t2) = 0.00887325
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 3  E_corr(CCSD) = -0.193435377158637  dE = -0.000599002992  norm(t1,t2) = 0.00382145
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 4  E_corr(CCSD) = -0.193691455596414  dE = -0.000256078438  norm(t1,t2) = 0.00106189
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 5  E_corr(CCSD) = -0.193667326310299  dE = 2.41292861e-05  norm(t1,t2) = 0.000271071
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 6  E_corr(CCSD) = -0.193667178063286  dE = 1.48247013e-07  norm(t1,t2) = 5.3612e-05
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 7  E_corr(CCSD) = -0.193667742814088  dE = -5.64750803e-07  norm(t1,t2) = 1.68981e-05
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 8  E_corr(CCSD) = -0.19366760327324  dE = 1.39540848e-07  norm(t1,t2) = 3.02904e-06
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 9  E_corr(CCSD) = -0.193667598088328  dE = 5.18491167e-09  norm(t1,t2) = 6.84753e-07
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+    CPU time for CCSD      3.07 sec, wall time      0.38 sec
+UCCSD converged
+E(UCCSD) = -56.37476333670359  E_corr = -0.1936675980883284
+CCSD correlation energy    (UHF) : -0.1936675981
+CCSD total energy          (UHF) : -56.3747633367
+
+T1 Diagnostic             (UHF) : 0.00813 0.01336
+
+
+  >>> Running UHF-CCSD <<<
+
+
+******** <class 'pyscf.cc.uccsd.UCCSD'> ********
+CC2 = 0
+CCSD nocc = (4, 5), nmo = (27, 28)
+frozen orbitals [[4], []]
+max_cycle = 50
+direct = 0
+conv_tol = 1e-08
+conv_tol_normt = 1e-06
+diis_space = 20
+diis_start_cycle = 0
+diis_start_energy_diff = 1e+09
+max_memory 4000 MB (current use 131 MB)
+Init t2, MP2 energy = -0.184495068435558
+    CPU time for init mp2      0.01 sec, wall time      0.00 sec
+Init E_corr(CCSD) = -0.184495068436924
+cycle = 1  E_corr(CCSD) = -0.190003673145265  dE = -0.00550860471  norm(t1,t2) = 0.0353348
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 2  E_corr(CCSD) = -0.192836374166687  dE = -0.00283270102  norm(t1,t2) = 0.00887325
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 3  E_corr(CCSD) = -0.193435377158637  dE = -0.000599002992  norm(t1,t2) = 0.00382145
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 4  E_corr(CCSD) = -0.193691455596414  dE = -0.000256078438  norm(t1,t2) = 0.00106189
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 5  E_corr(CCSD) = -0.193667326310299  dE = 2.41292861e-05  norm(t1,t2) = 0.000271071
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 6  E_corr(CCSD) = -0.193667178063286  dE = 1.48247013e-07  norm(t1,t2) = 5.3612e-05
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 7  E_corr(CCSD) = -0.193667742814088  dE = -5.64750803e-07  norm(t1,t2) = 1.68981e-05
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 8  E_corr(CCSD) = -0.19366760327324  dE = 1.39540848e-07  norm(t1,t2) = 3.02904e-06
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+cycle = 9  E_corr(CCSD) = -0.193667598088328  dE = 5.18491172e-09  norm(t1,t2) = 6.84753e-07
+    CPU time for CCSD iter      0.34 sec, wall time      0.04 sec
+    CPU time for CCSD      3.05 sec, wall time      0.38 sec
+UCCSD converged
+E(UCCSD) = -56.37476333670361  E_corr = -0.1936675980883284
+max_memory 3854 MB (145 MB in use)
+max_memory 3854 MB (145 MB in use)
+    CPU time for UCCSD(T)      1.15 sec, wall time      0.14 sec
+UCCSD(T) correction = -0.00276580531849357
+CCSD correlation energy    (UHF) : -0.1936675981
+CCSD total energy          (UHF) : -56.3747633367
+
+CCSD(T) correlation energy (UHF) : -0.1964334034
+CCSD(T) total energy       (UHF) : -56.3775291420
+
+T1 Diagnostic             (UHF) : 0.00813 0.01336
+
+**** SCF Summaries ****
+Total Energy =                         -76.027176647120001
+Nuclear Repulsion Energy =               9.189533762934902
+One-electron Energy =                 -123.141993257193846
+Two-electron Energy =                   37.925282847138973
+**** MO energy ****
+MO #1   energy= -20.5496368869811  occ= 2
+MO #2   energy= -1.33642273291531  occ= 2
+MO #3   energy= -0.699264901199204 occ= 2
+MO #4   energy= -0.566928113059743 occ= 2
+MO #5   energy= -0.493461147302557 occ= 2
+MO #6   energy= 0.18497960474118   occ= 0
+MO #7   energy= 0.256066705670293  occ= 0
+MO #8   energy= 0.788540330878754  occ= 0
+MO #9   energy= 0.852917387190501  occ= 0
+MO #10  energy= 1.16199957737614   occ= 0
+MO #11  energy= 1.19770416032459   occ= 0
+MO #12  energy= 1.25217485178881   occ= 0
+MO #13  energy= 1.43710705913449   occ= 0
+MO #14  energy= 1.47610674739259   occ= 0
+MO #15  energy= 1.67421015283992   occ= 0
+MO #16  energy= 1.79073719975717   occ= 0
+MO #17  energy= 1.93434315060483   occ= 0
+MO #18  energy= 2.44734689792232   occ= 0
+MO #19  energy= 2.47919113205395   occ= 0
+MO #20  energy= 3.28504123680354   occ= 0
+MO #21  energy= 3.33794641768542   occ= 0
+MO #22  energy= 3.50850546870068   occ= 0
+MO #23  energy= 3.86038843548374   occ= 0
+MO #24  energy= 4.14661482604531   occ= 0
+MO #25  energy= 34.3811046232204   occ= 0
+MO #26  energy= 39.1858492958839   occ= 0
+MO #27  energy= 39.6527445916425   occ= 0
+MO #28  energy= 39.9094078051466   occ= 0
+ ** MO coefficients (expansion on meta-Lowdin AOs) **
+               #1        #2        #3        #4        #5       
+  0 O 1s      -1.00000  -0.00083   0.00000   0.00062  -0.00000
+  0 O 2s      -0.00083   0.84802  -0.00000   0.31685   0.00000
+  0 O 3s       0.00076  -0.01801  -0.00000   0.03339  -0.00000
+  0 O 2px     -0.00000  -0.00000   0.00000  -0.00000   0.99781
+  0 O 2py     -0.00000  -0.00000  -0.81010  -0.00000   0.00000
+  0 O 2pz      0.00098  -0.13631  -0.00000   0.90310   0.00000
+  0 O 3px      0.00000   0.00000  -0.00000   0.00000   0.03051
+  0 O 3py     -0.00000  -0.00000   0.04720  -0.00000  -0.00000
+  0 O 3pz     -0.00031   0.01427  -0.00000   0.00961   0.00000
+  0 O 3dxy     0.00000  -0.00000  -0.00000   0.00000  -0.00000
+  0 O 3dyz    -0.00000   0.00000   0.05057   0.00000   0.00000
+  0 O 3dz^2   -0.00002   0.00691   0.00000  -0.02720  -0.00000
+  0 O 3dxz     0.00000  -0.00000   0.00000   0.00000  -0.02418
+ 0 O 3dx2-y2   0.00004  -0.02356  -0.00000   0.01599   0.00000
+  0 O 4s      -0.00137  -0.00128   0.00000  -0.00679   0.00000
+  0 O 4px     -0.00000   0.00000   0.00000  -0.00000  -0.02670
+  0 O 4py     -0.00000   0.00000  -0.03056  -0.00000   0.00000
+  0 O 4pz      0.00084  -0.00642   0.00000  -0.01265  -0.00000
+  1 H 1s      -0.00002   0.35714  -0.40729  -0.19626   0.00000
+  1 H 2s      -0.00026  -0.05091   0.04713   0.04192   0.00000
+  1 H 2px      0.00000  -0.00000   0.00000   0.00000   0.03279
+  1 H 2py     -0.00050  -0.01499   0.02308   0.01873  -0.00000
+  1 H 2pz      0.00031   0.01367  -0.01918   0.01328   0.00000
+  2 H 1s      -0.00002   0.35714   0.40729  -0.19626  -0.00000
+  2 H 2s      -0.00026  -0.05091  -0.04713   0.04192  -0.00000
+  2 H 2px      0.00000  -0.00000   0.00000   0.00000   0.03279
+  2 H 2py      0.00050   0.01499   0.02308  -0.01873  -0.00000
+  2 H 2pz      0.00031   0.01367   0.01918   0.01328  -0.00000
+               #6        #7        #8        #9        #10      
+  0 O 1s      -0.00009   0.00000   0.00000  -0.00060  -0.00048
+  0 O 2s       0.31957   0.00000   0.00000   0.25981  -0.01086
+  0 O 3s       0.13843   0.00000  -0.00000  -0.00740   0.05556
+  0 O 2px     -0.00000   0.00000   0.00000  -0.00000   0.00000
+  0 O 2py      0.00000  -0.36239   0.43524  -0.00000   0.00000
+  0 O 2pz     -0.28971  -0.00000  -0.00000  -0.25982  -0.03056
+  0 O 3px     -0.00000   0.00000   0.00000  -0.00000  -0.00000
+  0 O 3py      0.00000  -0.07422   0.20359  -0.00000   0.00000
+  0 O 3pz     -0.08534  -0.00000  -0.00000   0.09198   0.73632
+  0 O 3dxy    -0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+  0 O 3dyz    -0.00000   0.08139   0.16133  -0.00000   0.00000
+  0 O 3dz^2    0.01266   0.00000  -0.00000   0.03372  -0.02388
+  0 O 3dxz    -0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+ 0 O 3dx2-y2  -0.04472  -0.00000   0.00000   0.13101  -0.14006
+  0 O 4s      -0.03493  -0.00000   0.00000  -0.00657  -0.03667
+  0 O 4px      0.00000  -0.00000  -0.00000   0.00000   0.00000
+  0 O 4py     -0.00000   0.04929  -0.16054   0.00000  -0.00000
+  0 O 4pz      0.06781   0.00000   0.00000  -0.06096  -0.52546
+  1 H 1s      -0.48635   0.41955  -0.35502  -0.28859  -0.03083
+  1 H 2s      -0.39141   0.49991   0.46756   0.53600  -0.05899
+  1 H 2px     -0.00000  -0.00000  -0.00000   0.00000  -0.00000
+  1 H 2py      0.00257   0.03016   0.02381  -0.21525   0.07206
+  1 H 2pz      0.00307  -0.01464   0.11592  -0.01737   0.26154
+  2 H 1s      -0.48635  -0.41955   0.35502  -0.28859  -0.03083
+  2 H 2s      -0.39141  -0.49991  -0.46756   0.53600  -0.05899
+  2 H 2px     -0.00000  -0.00000  -0.00000   0.00000  -0.00000
+  2 H 2py     -0.00257   0.03016   0.02381   0.21525  -0.07206
+  2 H 2pz      0.00307   0.01464  -0.11592  -0.01737   0.26154
+               #11       #12       #13       #14       #15      
+  0 O 1s      -0.00000  -0.00000  -0.00038  -0.00000   0.00000
+  0 O 2s       0.00000   0.00000   0.05642   0.00000   0.00000
+  0 O 3s       0.00000  -0.00000  -0.34275  -0.00000   0.00000
+  0 O 2px     -0.04691  -0.00000   0.00000  -0.00000   0.04538
+  0 O 2py      0.00000  -0.09453  -0.00000  -0.00000  -0.00000
+  0 O 2pz     -0.00000  -0.00000  -0.07742  -0.00000  -0.00000
+  0 O 3px      0.79380   0.00000  -0.00000  -0.00000   0.12813
+  0 O 3py     -0.00000   0.73735  -0.00000  -0.00000   0.00000
+  0 O 3pz      0.00000   0.00000  -0.25390  -0.00000  -0.00000
+  0 O 3dxy    -0.00000   0.00000   0.00000  -0.30689  -0.00000
+  0 O 3dyz    -0.00000   0.16741  -0.00000   0.00000   0.00000
+  0 O 3dz^2   -0.00000  -0.00000  -0.28925  -0.00000  -0.00000
+  0 O 3dxz     0.01130   0.00000   0.00000  -0.00000   0.32311
+ 0 O 3dx2-y2  -0.00000  -0.00000  -0.09489  -0.00000   0.00000
+  0 O 4s      -0.00000   0.00000   0.09545   0.00000  -0.00000
+  0 O 4px     -0.58593  -0.00000  -0.00000   0.00000  -0.07193
+  0 O 4py      0.00000  -0.49936   0.00000  -0.00000  -0.00000
+  0 O 4pz     -0.00000  -0.00000   0.17365   0.00000  -0.00000
+  1 H 1s      -0.00000   0.16383  -0.07062   0.00000   0.00000
+  1 H 2s       0.00000  -0.11856   0.12377   0.00000   0.00000
+  1 H 2px      0.11009   0.00000   0.00000  -0.67299  -0.66028
+  1 H 2py     -0.00000   0.20995   0.32023   0.00000  -0.00000
+  1 H 2pz      0.00000   0.00450   0.46435   0.00000  -0.00000
+  2 H 1s       0.00000  -0.16383  -0.07062  -0.00000  -0.00000
+  2 H 2s      -0.00000   0.11856   0.12377   0.00000   0.00000
+  2 H 2px      0.11009   0.00000  -0.00000   0.67299  -0.66028
+  2 H 2py     -0.00000   0.20995  -0.32023  -0.00000  -0.00000
+  2 H 2pz      0.00000  -0.00450   0.46435   0.00000   0.00000
+               #16       #17       #18       #19       #20      
+  0 O 1s       0.00094  -0.00000  -0.00000   0.00122   0.00000
+  0 O 2s      -0.01935   0.00000   0.00000  -0.07718  -0.00000
+  0 O 3s       0.85472  -0.00000  -0.00000   0.11687  -0.00000
+  0 O 2px     -0.00000  -0.00000   0.00000   0.00000   0.01055
+  0 O 2py     -0.00000   0.04565   0.10507   0.00000  -0.00000
+  0 O 2pz     -0.02534   0.00000  -0.00000   0.07548   0.00000
+  0 O 3px     -0.00000   0.00000  -0.00000   0.00000  -0.05472
+  0 O 3py      0.00000   0.18574  -0.20541  -0.00000   0.00000
+  0 O 3pz     -0.12085   0.00000   0.00000  -0.14748   0.00000
+  0 O 3dxy    -0.00000  -0.00000  -0.00000   0.00000  -0.00000
+  0 O 3dyz     0.00000   0.05726   0.37973   0.00000  -0.00000
+  0 O 3dz^2   -0.22667   0.00000  -0.00000   0.09366  -0.00000
+  0 O 3dxz    -0.00000  -0.00000   0.00000  -0.00000   0.94598
+ 0 O 3dx2-y2   0.23272  -0.00000   0.00000  -0.40693   0.00000
+  0 O 4s      -0.21781   0.00000   0.00000  -0.08221  -0.00000
+  0 O 4px      0.00000  -0.00000   0.00000  -0.00000   0.02781
+  0 O 4py     -0.00000  -0.10560   0.17404   0.00000  -0.00000
+  0 O 4pz      0.04230  -0.00000  -0.00000   0.13157   0.00000
+  1 H 1s       0.06377  -0.01793  -0.05504   0.05664   0.00000
+  1 H 2s       0.08498   0.05437  -0.01098  -0.05375  -0.00000
+  1 H 2px      0.00000   0.00000  -0.00000  -0.00000   0.22500
+  1 H 2py      0.12764  -0.40776   0.48492  -0.49767  -0.00000
+  1 H 2pz      0.14815  -0.55222  -0.38451   0.35139   0.00000
+  2 H 1s       0.06377   0.01793   0.05504   0.05664   0.00000
+  2 H 2s       0.08498  -0.05437   0.01098  -0.05375  -0.00000
+  2 H 2px      0.00000   0.00000  -0.00000  -0.00000   0.22500
+  2 H 2py     -0.12764  -0.40776   0.48492   0.49767  -0.00000
+  2 H 2pz      0.14815   0.55222   0.38451   0.35139   0.00000
+               #21       #22       #23       #24       #25      
+  0 O 1s      -0.00000   0.00003  -0.00034   0.00000   0.00106
+  0 O 2s       0.00000   0.00619   0.03423  -0.00000  -0.00002
+  0 O 3s       0.00000   0.07021   0.21829  -0.00000  -0.24763
+  0 O 2px     -0.00000  -0.00000  -0.00000  -0.00000  -0.00000
+  0 O 2py      0.00000  -0.00000  -0.00000  -0.02993  -0.00000
+  0 O 2pz     -0.00000   0.00545  -0.03283   0.00000  -0.00112
+  0 O 3px      0.00000  -0.00000  -0.00000   0.00000  -0.00000
+  0 O 3py     -0.00000   0.00000  -0.00000  -0.11762  -0.00000
+  0 O 3pz     -0.00000  -0.07631  -0.06216   0.00000  -0.03690
+  0 O 3dxy    -0.95174   0.00000   0.00000  -0.00000   0.00000
+  0 O 3dyz     0.00000   0.00000   0.00000   0.88777  -0.00000
+  0 O 3dz^2    0.00000   0.91918   0.09257  -0.00000   0.00182
+  0 O 3dxz    -0.00000  -0.00000   0.00000   0.00000  -0.00000
+ 0 O 3dx2-y2  -0.00000   0.14683  -0.84232   0.00000  -0.01668
+  0 O 4s      -0.00000  -0.01275  -0.00651   0.00000  -0.96525
+  0 O 4px     -0.00000   0.00000   0.00000   0.00000  -0.00000
+  0 O 4py     -0.00000  -0.00000  -0.00000   0.02132  -0.00000
+  0 O 4pz     -0.00000   0.03269  -0.00838  -0.00000  -0.02488
+  1 H 1s      -0.00000  -0.00129  -0.02960   0.04314  -0.00438
+  1 H 2s       0.00000   0.03522   0.15738  -0.11006   0.00801
+  1 H 2px      0.21700  -0.00000   0.00000   0.00000  -0.00000
+  1 H 2py      0.00000   0.17053   0.22308  -0.22843   0.03847
+  1 H 2pz      0.00000   0.17443  -0.19653   0.17941  -0.02818
+  2 H 1s       0.00000  -0.00129  -0.02960  -0.04314  -0.00438
+  2 H 2s       0.00000   0.03522   0.15738   0.11006   0.00801
+  2 H 2px     -0.21700   0.00000   0.00000   0.00000  -0.00000
+  2 H 2py     -0.00000  -0.17053  -0.22308  -0.22843  -0.03847
+  2 H 2pz      0.00000   0.17443  -0.19653  -0.17941  -0.02818
+               #26       #27       #28      
+  0 O 1s      -0.00000  -0.00055   0.00000
+  0 O 2s      -0.00000   0.00101  -0.00000
+  0 O 3s      -0.00000  -0.02579   0.00000
+  0 O 2px      0.00264   0.00000  -0.00000
+  0 O 2py      0.00000  -0.00000  -0.00358
+  0 O 2pz     -0.00000  -0.00295   0.00000
+  0 O 3px      0.59122  -0.00000  -0.00000
+  0 O 3py      0.00000  -0.00000  -0.56267
+  0 O 3pz     -0.00000  -0.57439   0.00000
+  0 O 3dxy     0.00000   0.00000   0.00000
+  0 O 3dyz     0.00000  -0.00000  -0.03404
+  0 O 3dz^2   -0.00000  -0.00812   0.00000
+  0 O 3dxz     0.00361   0.00000  -0.00000
+ 0 O 3dx2-y2  -0.00000   0.01794  -0.00000
+  0 O 4s      -0.00000   0.04612   0.00000
+  0 O 4px      0.80624  -0.00000  -0.00000
+  0 O 4py     -0.00000  -0.00000  -0.82439
+  0 O 4pz     -0.00000  -0.81509   0.00000
+  1 H 1s      -0.00000  -0.00097   0.00188
+  1 H 2s      -0.00000  -0.01322  -0.00323
+  1 H 2px      0.01442  -0.00000  -0.00000
+  1 H 2py     -0.00000  -0.03242   0.01783
+  1 H 2pz     -0.00000   0.00585  -0.03126
+  2 H 1s       0.00000  -0.00097  -0.00188
+  2 H 2s       0.00000  -0.01322   0.00323
+  2 H 2px      0.01442  -0.00000  -0.00000
+  2 H 2py     -0.00000   0.03242   0.01783
+  2 H 2pz      0.00000   0.00585   0.03126
+ ** Mulliken pop on meta-lowdin orthogonal AOs  **
+ ** Mulliken pop  **
+pop of  0 O 1s        1.99999
+pop of  0 O 2s        1.63906
+pop of  0 O 3s        0.00288
+pop of  0 O 2px       1.99124
+pop of  0 O 2py       1.31254
+pop of  0 O 2pz       1.66835
+pop of  0 O 3px       0.00186
+pop of  0 O 3py       0.00446
+pop of  0 O 3pz       0.00059
+pop of  0 O 3dxy      0.00000
+pop of  0 O 3dyz      0.00512
+pop of  0 O 3dz^2     0.00157
+pop of  0 O 3dxz      0.00117
+pop of  0 O 3dx2-y2    0.00162
+pop of  0 O 4s        0.00010
+pop of  0 O 4px       0.00143
+pop of  0 O 4py       0.00187
+pop of  0 O 4pz       0.00040
+pop of  1 H 1s        0.66390
+pop of  1 H 2s        0.01314
+pop of  1 H 2px       0.00215
+pop of  1 H 2py       0.00222
+pop of  1 H 2pz       0.00146
+pop of  2 H 1s        0.66390
+pop of  2 H 2s        0.01314
+pop of  2 H 2px       0.00215
+pop of  2 H 2py       0.00222
+pop of  2 H 2pz       0.00146
+ ** Mulliken atomic charges  **
+charge of  0O =     -0.63425
+charge of  1H =      0.31713
+charge of  2H =      0.31713
+Dipole moment(X, Y, Z, Debye):  0.00000,  0.00000, -2.05966
