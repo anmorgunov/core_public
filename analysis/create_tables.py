@@ -286,10 +286,10 @@ class ExtrapSchemeSummary(CebeTable):
     def results_for_schemes(self, scheme_factory: Callable[[], Iterable[str]]) -> None:
         atoms = "C N O F".split()
         for atom in atoms:
-            path = str(self.save_folder / f"{self.prefix}_{atom}-summary.tex")
+            path = str(self.save_folder / f"{self.prefix}{atom}-summary.tex")
             self.series_table(atom.lower(), scheme_factory(), path)
         self.all_table(
-            scheme_factory(), str(self.save_folder / f"{self.prefix}_all-summary.tex")
+            scheme_factory(), str(self.save_folder / f"{self.prefix}all-summary.tex")
         )
 
 
