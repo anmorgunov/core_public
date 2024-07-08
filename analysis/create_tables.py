@@ -83,6 +83,20 @@ class SingleZetaResults(CebeTable):
 
 class MethodSummary(CebeTable):
     col_names = ["Basis", "Method", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
+    basisToLabel = {
+        "D": "cc-pCVDZ/cc-pVDZ",
+        "T": "cc-pCVTZ/cc-pVTZ",
+        "Q": "cc-pCVQZ/cc-pVQZ",
+        "5": "cc-pCV5Z/cc-pV5Z",
+        "pcX-1": "pcX-1/pc-1",
+        "pcX-2": "pcX-2/pc-2",
+        "pcX-3": "pcX-3/pc-3",
+        "pcX-4": "pcX-4/pc-4",
+        "ccX-DZ": "ccX-DZ/cc-pVDZ",
+        "ccX-TZ": "ccX-TZ/cc-pVTZ",
+        "ccX-QZ": "ccX-QZ/cc-pVQZ",
+        "ccX-5Z": "ccX-5Z/cc-pV5Z",
+    }
     basisToMethods = {
         "D": "UHF MP2 CCSD CCSD(T)".split(),
         "pcX-1": "UHF MP2 CCSD CCSD(T)".split(),
@@ -127,7 +141,10 @@ class MethodSummary(CebeTable):
                 methods = list(statsContainer[basis].keys())
             for method in methods:
                 stats = statsContainer[basis][method]
-                row = [basis, _format_method(method)]
+                row = [
+                    self.basisToLabel.get(basis, basis),
+                    _format_method(method),
+                ]
                 for key in "MSE MAE MedAE MaxAE STD(AE)".split():
                     row.append(
                         self._format(cast(float, stats[cast(StatsKeyType, key)]))
@@ -142,7 +159,7 @@ class MethodSummary(CebeTable):
         body, nSet = self.create_table_body(self.atomToBasisStats[atom], bases)
 
         if self.show_sample_size:
-            col_names = self.col_names + ["Sample Size"]
+            col_names = self.col_names + ["N"]
             suffix = ""
         else:
             col_names = self.col_names
@@ -166,7 +183,8 @@ class MethodSummary(CebeTable):
         body, nSet = self.create_table_body(self.basisToStats, bases)
 
         if self.show_sample_size:
-            self.col_names.append("Sample Size")
+            if self.col_names[-1] != "N":
+                self.col_names.append("N")
             suffix = ""
         else:
             assert len(nSet) == 1, "Sample size must be the same for all methods"
@@ -188,21 +206,21 @@ class MethodSummary(CebeTable):
     def all_results(self) -> None:
         atoms = self.atomToBasisStats.keys()
         for atom in atoms:
-            # if self.isPublication:
-            # bases = "D T Q 5".split()
-            bases = (
-                "D pcX-1 ccX-DZ T pcX-2 ccX-TZ Q pcX-3 ccX-QZ 5 pcX-4 ccX-5Z".split()
-            )
-            # else:
-            # bases = "D ccX-DZ pcX-1 T ccX-TZ pcX-2 Q ccX-QZ pcX-3 5 ccX-5Z pcX-4".split()
-            path = str(self.save_folder / f"{atom}-summary.tex")
+            bases = "D pcX-1 T pcX-2 Q pcX-3 5 pcX-4".split()
+            path = str(self.save_folder / f"{atom}-summary-pt1.tex")
+            self.series_table(atom.lower(), bases, path)
+            bases = "ccX-DZ ccX-TZ ccX-QZ ccX-5Z".split()
+            path = str(self.save_folder / f"{atom}-summary-pt2.tex")
             self.series_table(atom.lower(), bases, path)
 
-        self.all_table(bases, str(self.save_folder / "all-summary.tex"))
+        bases = "D pcX-1 T pcX-2 Q pcX-3 5 pcX-4".split()
+        self.all_table(bases, str(self.save_folder / "all-summary-pt1.tex"))
+        bases = "ccX-DZ ccX-TZ ccX-QZ ccX-5Z".split()
+        self.all_table(bases, str(self.save_folder / "all-summary-pt2.tex"))
 
 
 class ExtrapSchemeSummary(CebeTable):
-    col_names = ["Basis", "Method", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
+    col_names = ["Basis", "MSE", "MAE", "MedAE", "MaxAE", "STD"]
 
     def __init__(
         self,
@@ -245,7 +263,7 @@ class ExtrapSchemeSummary(CebeTable):
         else:
             col_names = self.col_names
             assert len(nSet) == 1, "Sample size must be the same for all methods"
-            suffix = f" ({nSet.pop()} molecules)"
+            suffix = f" (subset of {nSet.pop()} CEBEs)"
         header = ["\\textbf{%s}" % col_name for col_name in col_names]
         caption = (
             f"Statistical analysis of accuracy of different extrapolation schemes at predicting K-Edge CEBEs (in eV) compared to experimental data for {atom.upper()}-series"

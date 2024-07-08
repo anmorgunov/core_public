@@ -107,8 +107,15 @@ def extrapolate_deltae_given_scheme(
         method = "UHF"
     method = cast(LitKeyType, method)
 
-    # fmt:off
-    basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5, "pcX-1": 2, "pcX-2": 3, "pcX-3": 4, "pcX-4": 5, "ccX-DZ": 2, "ccX-TZ": 3, "ccX-QZ": 4, "ccX-5Z": 5,}  # fmt:on
+    basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5}
+    basToCoeff.update({"pcX-1": 2, "pcX-2": 3, "pcX-3": 4, "pcX-4": 5})
+    basToCoeff.update({"ccX-DZ": 2, "ccX-TZ": 3, "ccX-QZ": 4, "ccX-5Z": 5})
+    # if bases == ["D", "pcX-1", "pcX-2"]:
+    #     basToCoeff.update({"pcX-1": 3, "pcX-2": 4})
+    # if bases == ["D", "pcX-1", "pcX-2", "pcX-3"]:
+    #     basToCoeff.update({"pcX-1": 3, "pcX-2": 4, "pcX-3": 5})
+    # if bases == ["D", "pcX-2", "pcX-3"]:
+    #     basToCoeff.update({"pcX-2": 4, "pcX-3": 5})
     if len(bases) == 1:
         if corrBasis is None:
             raise TypeError(
@@ -226,7 +233,7 @@ class WholeDataset:
     As of now, it assumes you have CCSD/CCSD(T) results for D,T,Q basis sets AND MP2 results for D,T,Q,5
     """
 
-    def __init__(self, include_pcX: bool = False) -> None:
+    def __init__(self, include_pcX: bool = False, include_ccX: bool = False) -> None:
         """
         Initialization
         """
@@ -234,6 +241,7 @@ class WholeDataset:
         self.smallBasisException: Dict[str, Dict[str, Dict[str, str]]] = {}
         self.debug = False
         self.include_pcX = include_pcX
+        self.include_ccX = include_ccX
 
     def extrapolate_all_sp_data(
         self, algoData: AlgoEnergyType, key: str, schemes: List[str]
@@ -363,11 +371,16 @@ class WholeDataset:
             for method in "CCSD CCSD(T)".split():
                 ccsd_schemes.append(f"{bases}-{method}")
 
-        bases_combs = "pcX-1 pcX-2 | pcX-2 pcX-3 | pcX-1 pcX-2 pcX-3 | ccX-DZ ccX-TZ | ccX-TZ ccX-QZ | ccX-DZ ccX-TZ ccX-QZ".split(
-            " | "
-        )
+        # fmt:off
+        pcX_bases = "pcX-1 pcX-2 | pcX-2 pcX-3 | pcX-1 pcX-2 pcX-3 | D pcX-1 pcX-2 | D pcX-1 pcX-2 pcX-3 | D pcX-2 pcX-3".split(" | ")
+        ccX_bases = "ccX-DZ ccX-TZ | ccX-TZ ccX-QZ | ccX-DZ ccX-TZ ccX-QZ | D ccX-DZ ccX-TZ | D ccX-DZ ccX-TZ ccX-QZ | D ccX-TZ ccX-QZ".split(" | ")
+        # fmt:on
         if self.include_pcX:
-            for bases in bases_combs:
+            for bases in pcX_bases:
+                for method in "CCSD CCSD(T)".split():
+                    ccsd_schemes.append(f"{method}[{bases}]")
+        if self.include_ccX:
+            for bases in ccX_bases:
                 for method in "CCSD CCSD(T)".split():
                     ccsd_schemes.append(f"{method}[{bases}]")
         if self.debug:
@@ -379,12 +392,13 @@ class WholeDataset:
         if self.debug:
             print(f"{hf_schemes=}")
 
+        mp2_pure = []
         mp2_schemes = []
         mp2_schemes_ext = []
         mp2_bases = "D | T | Q | 5 | D T | D T Q | T Q | Q 5 | T Q 5 | D T Q 5"
         for bases in mp2_bases.split(" | "):
             if len(bases) != 1:
-                mp2_schemes.append(f"MP2[{bases}]")
+                mp2_pure.append(f"MP2[{bases}]")
             if bases != "D":
                 mp2_schemes.append(f"MP2[{bases}]+DifD")
                 mp2_schemes.append(f"MP2[{bases}]+DifD(T)")
@@ -393,6 +407,24 @@ class WholeDataset:
             ) in "STO-3G STO-6G 3-21G 4-31G 6-31G def2svp def2svpd".split():
                 mp2_schemes_ext.append(f"MP2[{bases}]+Dif{small_basis}")
                 mp2_schemes_ext.append(f"MP2[{bases}]+Dif{small_basis}(T)")
+        if self.include_pcX:
+            for base in ["pcX-1", "pcX-2"]:
+                # mp2_pure.append(f"MP2[{base}]")
+                mp2_schemes.append(f"MP2[{base}]+DifD")
+                mp2_schemes.append(f"MP2[{base}]+DifD(T)")
+            for bases in pcX_bases:
+                mp2_pure.append(f"MP2[{bases}]")
+                mp2_schemes.append(f"MP2[{bases}]+DifD")
+                mp2_schemes.append(f"MP2[{bases}]+DifD(T)")
+        if self.include_ccX:
+            for base in ["ccX-DZ", "ccX-TZ"]:
+                # mp2_pure.append(f"MP2[{base}]")
+                mp2_schemes.append(f"MP2[{base}]+DifD")
+                mp2_schemes.append(f"MP2[{base}]+DifD(T)")
+            for bases in ccX_bases:
+                mp2_pure.append(f"MP2[{bases}]")
+                mp2_schemes.append(f"MP2[{bases}]+DifD")
+                mp2_schemes.append(f"MP2[{bases}]+DifD(T)")
 
         if self.debug:
             print(f"{mp2_schemes=}")
@@ -401,6 +433,7 @@ class WholeDataset:
             "HF": hf_schemes,
             "CCSD": ccsd_schemes,
             "MP2": mp2_schemes,
+            "MP2_pure": mp2_pure,
             "MP2_EXT": mp2_schemes_ext,
         }
 

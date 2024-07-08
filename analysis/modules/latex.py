@@ -12,10 +12,12 @@ class Table:
         headers: Union[str, List[str]],
         body: List[List[str]],
         save_path: str,
+        include_label: bool = False,
     ) -> None:
         file_content = "\\begin{table}\n"
         file_content += "  \caption{\\textbf{%s}}\n" % caption
-        file_content += "  \label{tbl:%s}\n" % label
+        if include_label:
+            file_content += "  \label{tbl:%s}\n" % label
         file_content += "  \\begin{tabular}{%s}\n" % positioning
         file_content += "    \\toprule\n"
 
