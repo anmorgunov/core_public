@@ -22,7 +22,9 @@ pobj = parsers.ParsedData(
 )
 # pobj.debug = True
 pobj.process(save=True)
+pobj.process(save=True)
 
+# EXAMPLE: pp.pprint(pobj.algoToDelta['mom']['o']['h2o']['D'])
 # EXAMPLE: pp.pprint(pobj.algoToDelta['mom']['o']['h2o']['D'])
 
 # the calculations_wb file can become huge quite quickly, so if you want to check on results
@@ -169,6 +171,7 @@ create_figures.extrap_err_bars_dtstudy(
     eobj.algoToAtomStats["mom"], mp2_w5, mp2Colors, figures_path, suffix="-mp2-w5"
 )
 
+eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
 eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
 eobj.calculate_errors(pobj.molToExper)
 eobj.calculate_series_statistics()
