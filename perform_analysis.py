@@ -22,9 +22,7 @@ pobj = parsers.ParsedData(
 )
 # pobj.debug = True
 pobj.process(save=True)
-pobj.process(save=True)
 
-# EXAMPLE: pp.pprint(pobj.algoToDelta['mom']['o']['h2o']['D'])
 # EXAMPLE: pp.pprint(pobj.algoToDelta['mom']['o']['h2o']['D'])
 
 # the calculations_wb file can become huge quite quickly, so if you want to check on results
