@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Set, TypedDict, cast
 
@@ -6,13 +7,14 @@ import numpy.typing as npt
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
+HA_TO_EV = 27.211399
 # fmt:off
 allowed_extra_keys = {"Frozen orbitals", "Swapped orbitals", "T1 for RHF", "T1 for UHF(a)", "T1 for UHF(b)", "error", "detailed"}
 allowed_methods = {"HF", "UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT"}
 LitKeyType = Literal["Frozen orbitals", "Swapped orbitals", "T1 for RHF", "T1 for UHF(a)", "T1 for UHF(b)", "UHF", "MP2", "MP3", "CCSD", "CCSD(T)", "CCSDT", "error", "detailed"]
 # fmt:on
-DataPointType = TypedDict(
-    "DataPointType",
+DeltaEnergyType = TypedDict(
+    "DeltaEnergyType",
     {
         "Frozen orbitals": str,
         "Swapped orbitals": str,
@@ -34,10 +36,10 @@ DataPointType = TypedDict(
 
 ExperDataType = Dict[str, float]
 # DataPointType = Dict[str, Union[str, float]]
-BasisDataType = Dict[str, DataPointType]
-MoleculeDataType = Dict[str, BasisDataType]
-AtomDataType = Dict[str, MoleculeDataType]
-AlgoDataType = Dict[str, AtomDataType]
+BasisDeltaType = Dict[str, DeltaEnergyType]
+MoleculeDeltaType = Dict[str, BasisDeltaType]
+AtomDeltaType = Dict[str, MoleculeDeltaType]
+AlgoDeltaType = Dict[str, AtomDeltaType]
 
 MethodErrorType = Dict[str, float]
 BasisErrorType = Dict[str, MethodErrorType]
@@ -62,9 +64,111 @@ AlgoStatsType = Dict[str, BasisStatsType]
 AtomBasisStatsType = Dict[str, BasisStatsType]
 AlgoAtomStatsType = Dict[str, AtomBasisStatsType]
 
+
+class MethodResultType(TypedDict):
+    tot: float
+    corr: float
+
+
 # fmt:off
 CALC_WB_COLS = {"B": "Molecule","C": "Method","D": "Basis","E": "Atom","F": "UHF","G": "MP2","H": "MP3","I": "CCSD","J": "CCSD(T)","K": "Exper.","L": "Frozen","M": "Swapped","N": "T1 for RHF","O": "T1 for UHF(a)","P": "T1 for UHF(b)","Q": "Error","R": "Comments","S": "Custom Notes"}
+StateResults = TypedDict("StateResults", {"RHF": float, "UHF": float, "RHF-MP2": MethodResultType, "RHF-CCSD": MethodResultType, "RHF-CCSD(T)": MethodResultType, "UHF-MP2": MethodResultType, "UHF-CCSD": MethodResultType, "UHF-CCSD(T)": MethodResultType})
+MethodKeyType = Literal["RHF", "UHF", "RHF-MP2", "RHF-CCSD", "RHF-CCSD(T)", "UHF-MP2", "UHF-CCSD", "UHF-CCSD(T)"]
 # fmt:on
+BasisEnergyType = Dict[str, StateResults]
+MoleculeEnergyType = Dict[str, BasisEnergyType]
+AtomEnergyType = Dict[str, MoleculeEnergyType]
+AlgoEnergyType = Dict[str, AtomEnergyType]
+
+
+def parse_pyscf_output(file_path: str | Path) -> StateResults:
+    with open(file_path, "r") as file:
+        content = file.read()
+
+    results: StateResults = {
+        "RHF": 0.0,
+        "UHF": 0.0,
+        "RHF-MP2": {"tot": 0.0, "corr": 0.0},
+        "RHF-CCSD": {"tot": 0.0, "corr": 0.0},
+        "RHF-CCSD(T)": {"tot": 0.0, "corr": 0.0},
+        "UHF-MP2": {"tot": 0.0, "corr": 0.0},
+        "UHF-CCSD": {"tot": 0.0, "corr": 0.0},
+        "UHF-CCSD(T)": {"tot": 0.0, "corr": 0.0},
+    }
+
+    patterns: Dict[MethodKeyType, str] = {
+        "RHF": r">>> Running RHF <<<.*?final Etot\s+:\s+(-?\d+\.\d+)",
+        "UHF": r">>> Running UHF <<<.*?final Etot\s+:\s+(-?\d+\.\d+)",
+        "RHF-MP2": r">>> Running RHF-MP2 <<<.*?MP2 correlation energy \(RHF\) : (-?\d+\.\d+).*?MP2 total energy\s+\(RHF\) : (-?\d+\.\d+)",
+        "UHF-MP2": r">>> Running UHF-MP2 <<<.*?MP2 correlation energy \(UHF\) : (-?\d+\.\d+).*?MP2 total energy\s+\(UHF\) : (-?\d+\.\d+)",
+        "RHF-CCSD": r">>> Running RHF-CCSD <<<.*?CCSD correlation energy\s+\(RHF\) : (-?\d+\.\d+).*?CCSD total energy\s+\(RHF\) : (-?\d+\.\d+)",
+        "UHF-CCSD": r">>> Running UHF-CCSD <<<.*?CCSD correlation energy\s+\(UHF\) : (-?\d+\.\d+).*?CCSD total energy\s+\(UHF\) : (-?\d+\.\d+)",
+        "RHF-CCSD(T)": r">>> Running RHF-CCSD <<<.*?CCSD\(T\) correlation energy \(RHF\) : (-?\d+\.\d+).*?CCSD\(T\) total energy\s+\(RHF\) : (-?\d+\.\d+)",
+        "UHF-CCSD(T)": r">>> Running UHF-CCSD <<<.*?CCSD\(T\) correlation energy \(UHF\) : (-?\d+\.\d+).*?CCSD\(T\) total energy\s+\(UHF\) : (-?\d+\.\d+)",
+    }
+
+    for method, pattern in patterns.items():
+        match = re.search(pattern, content, re.DOTALL)
+        if match:
+            if method in ("RHF", "UHF"):
+                results[method] = float(match.group(1))
+            else:
+                result_method = cast(MethodResultType, results[method])
+                result_method["corr"] = float(match.group(1))
+                result_method["tot"] = float(match.group(2))
+    # print(results)
+    return results
+
+
+def are_floats_equal(a: float, b: float, epsilon: float = 1.0001e-6) -> bool:
+    # print(f"{a=}, {b=}, {abs(a - b)=}, {epsilon=}")
+    return abs(a - b) < epsilon
+
+
+def _format_cebe(cebe: float) -> float:
+    return float(f"{cebe:.6f}")
+
+
+def compare_delta_to_sp_dicts(
+    delta_dict: DeltaEnergyType, sp_dict: StateResults
+) -> bool:
+    delta_hf_sp = HA_TO_EV * (sp_dict["UHF"] - sp_dict["RHF"])
+    if not are_floats_equal(_format_cebe(delta_hf_sp), delta_dict["UHF"]):
+        return False
+    if "MP2" not in delta_dict:
+        return True
+    delta_mp2_sp = HA_TO_EV * (sp_dict["UHF-MP2"]["tot"] - sp_dict["RHF-MP2"]["tot"])
+    if not are_floats_equal(_format_cebe(delta_mp2_sp), delta_dict["MP2"]):
+        return False
+
+    if "CCSD" not in delta_dict:
+        return True
+    delta_ccsd_sp = HA_TO_EV * (sp_dict["UHF-CCSD"]["tot"] - sp_dict["RHF-CCSD"]["tot"])
+    if not are_floats_equal(_format_cebe(delta_ccsd_sp), delta_dict["CCSD"]):
+        return False
+
+    if "CCSD(T)" not in delta_dict:
+        return True
+    delta_ccsdt_sp = HA_TO_EV * (
+        sp_dict["UHF-CCSD(T)"]["tot"] - sp_dict["RHF-CCSD(T)"]["tot"]
+    )
+    if not are_floats_equal(_format_cebe(delta_ccsdt_sp), delta_dict["CCSD(T)"]):
+        return False
+    return True
+
+
+IGNORED_BASES = {"pcX-2", "pcX-3", "pcX-4", "ccX-TZ", "ccX-QZ", "ccX-5Z"}
+
+if __name__ == "__main__":
+    path = "/Users/morgunov/vv/cebe_prediction/data/calculations/mom/o/co/pcX-1/pyscf_output_mom.txt"
+    sp_energies = parse_pyscf_output(path)
+    delta_E: DeltaEnergyType = {
+        "UHF": 541.396936,
+        "MP2": 542.994313,
+        "CCSD": 542.753663,
+        "CCSD(T)": 542.828197,
+    }
+    print(compare_delta_to_sp_dicts(delta_E, sp_energies))
 
 
 def get_next_col(col: str, prefix: Optional[str] = None) -> str:
@@ -113,7 +217,8 @@ class ParsedData:
         self.doAverageExperimental = do_average_experimental
 
         self.algorithms = algorithms
-        self.algoToData: AlgoDataType = {}
+        self.algoToDelta: AlgoDeltaType = {}
+        self.algoToEnergy: AlgoEnergyType = {}
 
         self.debug = False
 
@@ -135,25 +240,30 @@ class ParsedData:
                 "CCSD": result of CCSD calculation
             \}
 
-        molToData is saved as a value of self.algoToData with relevant key
+        molToData is saved as a value of self.algoToDelta with relevant key
 
         P.S. This is already implemented to work with different algorithms (mom, sgm, coreless). Just use a different key in algorithmToFolders
         """
-        algoToData = self.algoToData
+        algoToDelta = self.algoToDelta
         for algorithm in self.algorithms:
             algo_path = self.calc_path / algorithm
             atoms = [item.name for item in algo_path.glob("*/")]
             if self.debug:
                 print(f"{atoms=}")
             for atom in atoms:
-                molToData = algoToData.setdefault(algorithm, {}).setdefault(atom, {})
+                molToData = algoToDelta.setdefault(algorithm, {}).setdefault(atom, {})
                 if self.debug:
-                    print(f"{self.algoToData=}, {molToData=}")
+                    print(f"{self.algoToDelta=}, {molToData=}")
                 atom_path = algo_path / atom
                 molecules = [molecule.name for molecule in atom_path.glob("*/")]
                 if self.debug:
                     print(f"{molecules=}")
                 for molecule in molecules:
+                    if self.atom_to_mols is not None and (
+                        atom not in self.atom_to_mols
+                        or molecule not in self.atom_to_mols[atom]
+                    ):
+                        continue
                     mol_path = atom_path / molecule
                     bases = [basis.name for basis in mol_path.glob("*/")]
                     if self.debug:
@@ -163,9 +273,10 @@ class ParsedData:
                         data_point = basisToData.setdefault(basis, {})
                         bas_path = mol_path / basis
                         result_file = bas_path / f"CEBE_{algorithm}.txt"
+                        pyscf_out = bas_path / f"pyscf_output_{algorithm}.txt"
 
                         # Case 1. Calculation terminated normally
-                        if result_file.exists():
+                        if result_file.exists() and open(result_file, "r").read() != "":
                             lines = open(result_file, "r").readlines()
                             for rline in lines:
                                 line = rline.split("\n")[0]
@@ -187,6 +298,24 @@ class ParsedData:
                                     LitKeyType, rmethod.split(" ")[1][1:-1]
                                 )
                                 data_point[posthf_method] = value
+                            if not pyscf_out.exists():
+                                raise FileNotFoundError(
+                                    f"Expected {pyscf_out} to exist"
+                                )
+                            sp_energies = parse_pyscf_output(pyscf_out)
+                            self.algoToEnergy.setdefault(algorithm, {}).setdefault(
+                                atom, {}
+                            ).setdefault(molecule, {})[basis] = sp_energies
+                            if not compare_delta_to_sp_dicts(data_point, sp_energies):
+                                if basis in IGNORED_BASES:
+                                    continue
+                                print(f"\n\n{molecule=} {basis=}")
+                                print(f"{data_point=}")
+                                print(f"{sp_energies=}")
+                                raise ValueError(
+                                    f"Data from pyscf output {pyscf_out} does not match data from CEBE file {result_file}"
+                                )
+
                         # Case 2. Calculation was unsuccesful and did not terminate normally
                         else:
                             data_point["error"] = "No CEBE file"
@@ -218,7 +347,7 @@ class ParsedData:
         self.molToExper = data
 
     def _calculate_mp25(self) -> None:
-        for atomData in self.algoToData.values():
+        for atomData in self.algoToDelta.values():
             for molData in atomData.values():
                 for basData in molData.values():
                     for data in basData.values():
@@ -235,7 +364,7 @@ class ParsedData:
 
     def _update_calculation_wb(self) -> None:
         """
-        Write the contents of self.algoToData from parse_results to a CEBE_Data file, preserving any comments in column L (currently not used)
+        Write the contents of self.algoToDelta from parse_results to a CEBE_Data file, preserving any comments in column L (currently not used)
         """
         readWS = self.readWB["Sheet"]
         ws = self.saveWB["Sheet"]
@@ -247,7 +376,7 @@ class ParsedData:
         for col in self.cols.split(" "):
             ws[col + str(r)].font = self.font
         r += 1
-        for algorithm, atomData in self.algoToData.items():
+        for algorithm, atomData in self.algoToDelta.items():
             for atom, molData in atomData.items():
                 for molecule, basToData in molData.items():
                     for basis, data in basToData.items():
@@ -325,10 +454,10 @@ class ParsedData:
         new_wb.save(save_path)
 
     def filter_data_by_molecules(
-        self, algoToData: AlgoDataType, atomToMols: Dict[str, Set[str]]
-    ) -> AlgoDataType:
-        filtered_algoToData: AlgoDataType = {}
-        for algorithm, atomData in algoToData.items():
+        self, algoToDelta: AlgoDeltaType, atomToMols: Dict[str, Set[str]]
+    ) -> AlgoDeltaType:
+        filtered_algoToData: AlgoDeltaType = {}
+        for algorithm, atomData in algoToDelta.items():
             for atom, molData in atomData.items():
                 if atom not in atomToMols:
                     continue
@@ -341,10 +470,10 @@ class ParsedData:
         return filtered_algoToData
 
     def filter_by_presence_of_experimental(
-        self, algoToData: AlgoDataType
-    ) -> AlgoDataType:
-        filtered_algoToData: AlgoDataType = {}
-        for algorithm, atomData in algoToData.items():
+        self, algoToDelta: AlgoDeltaType
+    ) -> AlgoDeltaType:
+        filtered_algoToData: AlgoDeltaType = {}
+        for algorithm, atomData in algoToDelta.items():
             for atom, molData in atomData.items():
                 for molecule, basData in molData.items():
                     if molecule in self.molToExper:
@@ -353,10 +482,10 @@ class ParsedData:
                         )[molecule] = basData
         return filtered_algoToData
 
-    def calculate_errors(self, algoToData: AlgoDataType) -> None:
+    def calculate_errors(self, algoToDelta: AlgoDeltaType) -> None:
         valid_keys = {"UHF", "MP2", "MP2.5", "MP3", "CCSD", "CCSD(T)"}
         algoToError: AlgoErrorType = {}
-        for algorithm, atomData in algoToData.items():
+        for algorithm, atomData in algoToDelta.items():
             for atom, molData in atomData.items():
                 for molecule, basData in molData.items():
                     if molecule not in self.molToExper:
@@ -443,7 +572,10 @@ class ParsedData:
                     }
         self.algoToStats = algoToStats
 
-    def process(self, save: bool = True) -> None:
+    def process(
+        self, atom_to_mols: Optional[Dict[str, Set[str]]] = None, save: bool = True
+    ) -> None:
+        self.atom_to_mols = atom_to_mols
         self._parse_experimental()
         self._parse_calculations()
         self._calculate_mp25()
