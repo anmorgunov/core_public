@@ -4,18 +4,23 @@ import numpy as np
 import numpy.typing as npt
 import scipy.optimize
 
-from analysis.modules.parsers import DataPointType, LitKeyType, allowed_methods
+from analysis.modules.parsers import (
+    AlgoDeltaType,
+    AlgoEnergyType,
+    BasisDeltaType,
+    BasisEnergyType,
+    ExperDataType,
+    LitKeyType,
+    MethodKeyType,
+    MethodResultType,
+    allowed_methods,
+)
 
+HA_TO_EV = 27.211399
 # fmt:off
 StatsKeyType = Literal["MSE", "MAE", "MedAE", "MaxAE", "STD(AE)", "n", "errors", "abs_errors"]
 StatsType = TypedDict('StatsType', {"MSE":float, "MAE":float, "MedAE": float, "MaxAE": float, "STD(AE)":float, "n": int, "errors": npt.NDArray[np.float64], "abs_errors":npt.NDArray[np.float64]})
 # fmt:on
-ExperDataType = Dict[str, float]
-# DataPointType = Dict[str, Union[str, float]]
-BasisDataType = Dict[str, DataPointType]
-MoleculeDataType = Dict[str, BasisDataType]
-AtomDataType = Dict[str, MoleculeDataType]
-AlgoDataType = Dict[str, AtomDataType]
 
 SchemeResultType = Dict[str, Optional[float]]
 SchemesCBSType = Dict[str, SchemeResultType]
@@ -94,8 +99,8 @@ def parse_scheme(scheme: str) -> Tuple[str, List[str], str, Optional[bool]]:
     return method, bases, corrBasis, corrTriples
 
 
-def extrapolate_molecule_given_scheme(
-    basisData: BasisDataType, scheme: str
+def extrapolate_deltae_given_scheme(
+    basisData: BasisDeltaType, scheme: str
 ) -> Optional[SchemeResultType]:
     method, bases, corrBasis, corrTriples = parse_scheme(scheme)
     if method == "HF":
@@ -137,27 +142,130 @@ def extrapolate_molecule_given_scheme(
         return {"cbs": method_cbs, "cbs+corr": method_cbs + corr, "corr": corr}
 
 
+def extrapolate_energy_given_scheme(
+    basisData: BasisEnergyType, key: str, scheme: str
+) -> Optional[SchemeResultType]:
+    if key not in {"tot", "corr"}:
+        raise KeyError(f"Received unrecognized key {key}")
+    method, bases, corrBasis, corrTriples = parse_scheme(scheme)
+    if method == "HF":
+        raise KeyError("HF is not supported for extrapolation of sp energies")
+    gs_method = cast(MethodKeyType, "RHF-" + method)
+    es_method = cast(MethodKeyType, "UHF-" + method)
+
+    # fmt:off
+    basToCoeff = {"D": 2, "T": 3, "Q": 4, "5": 5, "pcX-1": 2, "pcX-2": 3, "pcX-3": 4, "pcX-4": 5, "ccX-DZ": 2, "ccX-TZ": 3, "ccX-QZ": 4, "ccX-5Z": 5}  # fmt:on
+    if len(bases) == 1:
+        if corrBasis is None:
+            raise TypeError(
+                "You need to specify at least two basis sets for extrapolation"
+            )
+        method_gs = cast(MethodResultType, basisData[bases[0]][gs_method])
+        method_es = cast(MethodResultType, basisData[bases[0]][es_method])
+        method_cbs = HA_TO_EV * (method_es["tot"] - method_gs["tot"])
+    else:
+        zetas = [basToCoeff[basis] for basis in bases]
+        gs_energies = []
+        es_energies = []
+        for basis in bases:
+            method_result = cast(MethodResultType, basisData[basis][gs_method])
+            gs_energies.append(method_result[cast(Literal["tot", "corr"], key)])
+            method_result = cast(MethodResultType, basisData[basis][es_method])
+            es_energies.append(method_result[cast(Literal["tot", "corr"], key)])
+
+        method_cbs_gs = extrapolate_energies(zetas, gs_energies)
+        method_cbs_es = extrapolate_energies(zetas, es_energies)
+        method_cbs = HA_TO_EV * (method_cbs_es - method_cbs_gs)
+        if key == "corr":
+            deltaHF = basisData[bases[-1]]["UHF"] - basisData[bases[-1]]["RHF"]
+            method_cbs += HA_TO_EV * deltaHF
+
+    if corrBasis is None:
+        return {
+            "cbs": method_cbs,
+            "cbs+corr": None,
+            "corr": None,
+        }
+    else:
+        mp2 = (
+            basisData[corrBasis]["UHF-MP2"]["tot"]
+            - basisData[corrBasis]["RHF-MP2"]["tot"]
+        )
+        if corrTriples:
+            if (
+                corrBasis not in basisData
+                or "MP2" not in basisData[corrBasis]
+                or "RHF-CCSD(T)" not in basisData[corrBasis]
+                or "UHF-CCSD(T)" not in basisData[corrBasis]
+            ):
+                return None
+            cc = (
+                basisData[corrBasis]["UHF-CCSD(T)"]["tot"]
+                - basisData[corrBasis]["RHF-CCSD(T)"]["tot"]
+            )
+            corr = cc - mp2
+            return {"cbs": method_cbs, "cbs+corr": method_cbs + corr, "corr": corr}
+        else:
+            if (
+                corrBasis not in basisData
+                or "MP2" not in basisData[corrBasis]
+                or "RHF-CCSD" not in basisData[corrBasis]
+                or "UHF-CCSD" not in basisData[corrBasis]
+            ):
+                return None
+            cc = (
+                basisData[corrBasis]["UHF-CCSD"]["tot"]
+                - basisData[corrBasis]["RHF-CCSD"]["tot"]
+            )
+            corr = cc - mp2
+            return {"cbs": method_cbs, "cbs+corr": method_cbs + corr, "corr": corr}
+
+
 class WholeDataset:
     """An object that is used to extrapolate results to CBS Limit for a given series.
     As of now, it assumes you have CCSD/CCSD(T) results for D,T,Q basis sets AND MP2 results for D,T,Q,5
     """
 
-    def __init__(self) -> None:
+    def __init__(self, include_pcX: bool = False) -> None:
         """
         Initialization
         """
         self.algoToCBS: AlgoCBSType = {}
         self.smallBasisException: Dict[str, Dict[str, Dict[str, str]]] = {}
         self.debug = False
+        self.include_pcX = include_pcX
 
-    def extrapolate_all_data(self, algoData: AlgoDataType, schemes: List[str]) -> None:
+    def extrapolate_all_sp_data(
+        self, algoData: AlgoEnergyType, key: str, schemes: List[str]
+    ) -> None:
+        if key not in {"tot", "corr"}:
+            raise KeyError(f"Received unrecognized key {key}")
         for algorithm, atomData in algoData.items():
             for atom, molData in atomData.items():
                 for mol, basisData in molData.items():
                     for scheme in schemes:
                         if self.debug:
                             print(f"{atom=}, {mol=}, {scheme=}")
-                        result = extrapolate_molecule_given_scheme(basisData, scheme)
+                        result = extrapolate_energy_given_scheme(basisData, key, scheme)
+                        if result is None:
+                            self.smallBasisException.setdefault(
+                                algorithm, {}
+                            ).setdefault(atom, {})[mol] = scheme
+                        else:
+                            self.algoToCBS.setdefault(algorithm, {}).setdefault(
+                                atom, {}
+                            ).setdefault(mol, {})[scheme] = result
+
+    def extrapolate_all_delta_data(
+        self, algoData: AlgoDeltaType, schemes: List[str]
+    ) -> None:
+        for algorithm, atomData in algoData.items():
+            for atom, molData in atomData.items():
+                for mol, basisData in molData.items():
+                    for scheme in schemes:
+                        if self.debug:
+                            print(f"{atom=}, {mol=}, {scheme=}")
+                        result = extrapolate_deltae_given_scheme(basisData, scheme)
                         if result is None:
                             self.smallBasisException.setdefault(
                                 algorithm, {}
@@ -255,12 +363,13 @@ class WholeDataset:
             for method in "CCSD CCSD(T)".split():
                 ccsd_schemes.append(f"{bases}-{method}")
 
-        # bases_combs = "pcX-1 pcX-2 | pcX-2 pcX-3 | pcX-1 pcX-2 pcX-3 | ccX-DZ ccX-TZ | ccX-TZ ccX-QZ | ccX-DZ ccX-TZ ccX-QZ".split(
-        #     " | "
-        # )
-        # for bases in bases_combs:
-        #     for method in "CCSD CCSD(T)".split():
-        #         ccsd_schemes.append(f"{method}[{bases}]")
+        bases_combs = "pcX-1 pcX-2 | pcX-2 pcX-3 | pcX-1 pcX-2 pcX-3 | ccX-DZ ccX-TZ | ccX-TZ ccX-QZ | ccX-DZ ccX-TZ ccX-QZ".split(
+            " | "
+        )
+        if self.include_pcX:
+            for bases in bases_combs:
+                for method in "CCSD CCSD(T)".split():
+                    ccsd_schemes.append(f"{method}[{bases}]")
         if self.debug:
             print(f"{ccsd_schemes=}")
 

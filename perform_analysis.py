@@ -21,9 +21,9 @@ pobj = parsers.ParsedData(
     calculations_folder=DATA_PATH / "calculations",
 )
 # pobj.debug = True
-pobj.process(save=False)
+pobj.process(save=True)
 
-# EXAMPLE: pp.pprint(pobj.algoToData['mom']['o']['h2o']['D'])
+# EXAMPLE: pp.pprint(pobj.algoToDelta['mom']['o']['h2o']['D'])
 
 # the calculations_wb file can become huge quite quickly, so if you want to check on results
 # of certain molecules of interest, you can use the method below
@@ -50,7 +50,7 @@ atomToMols = constants.ATOM_TO_MOLS
 #     atom.lower(): atomToMols[atom] - excludeAtomToMols[atom]
 #     for atom in atomToMols
 # }
-filtered_by_mols = pobj.filter_data_by_molecules(pobj.algoToData, atomToMols)
+filtered_by_mols = pobj.filter_data_by_molecules(pobj.algoToDelta, atomToMols)
 filteredData = pobj.filter_by_presence_of_experimental(filtered_by_mols)
 
 # filtered_atomToMols = {atom: list(mols) for atom, mols in filteredData['mom'].items()}
@@ -62,9 +62,9 @@ pobj.calculate_overall_statistics()
 eobj = extrapolation.WholeDataset()
 eobj._create_extrapolation_schemes()
 eobj.debug = False
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["HF"])
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["CCSD"])
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["MP2"])
+eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["HF"])
+eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["CCSD"])
+eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["MP2"])
 
 eobj.calculate_errors(pobj.molToExper)
 eobj.calculate_series_statistics()
@@ -163,7 +163,7 @@ create_figures.extrap_err_bars_dtstudy(
     eobj.algoToAtomStats["mom"], mp2_w5, mp2Colors, figures_path, suffix="-mp2-w5"
 )
 
-eobj.extrapolate_all_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
+eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
 eobj.calculate_errors(pobj.molToExper)
 eobj.calculate_series_statistics()
 eobj.calculate_overall_statistics()

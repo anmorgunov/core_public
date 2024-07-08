@@ -8,7 +8,7 @@ from analysis.modules import latex
 from analysis.modules.extrapolation import AtomStatsType, SchemeStatsType, StatsKeyType
 from analysis.modules.parsers import (
     AtomBasisStatsType,
-    AtomDataType,
+    AtomDeltaType,
     BasisStatsType,
     ExperDataType,
 )
@@ -30,7 +30,7 @@ class SingleZetaResults(CebeTable):
     # fmt:on
 
     def __init__(
-        self, atomToData: AtomDataType, molToExper: ExperDataType, save_folder: Path
+        self, atomToData: AtomDeltaType, molToExper: ExperDataType, save_folder: Path
     ) -> None:
         self.atomToData = atomToData
         self.molToExper = molToExper
@@ -211,12 +211,14 @@ class ExtrapSchemeSummary(CebeTable):
         save_folder: Path,
         show_sample_size: bool = True,
         isPublication: bool = False,
+        prefix: str = "",
     ):
         self.schemeToStats = schemeToStats
         self.atomToSchemeStats = atomToSchemeStats
         self.save_folder = save_folder
         self.show_sample_size = show_sample_size
         self.isPublication = isPublication
+        self.prefix = prefix
 
     def create_table_body(
         self, statsContainer: SchemeStatsType, schemes: Iterable[str]
@@ -284,9 +286,11 @@ class ExtrapSchemeSummary(CebeTable):
     def results_for_schemes(self, scheme_factory: Callable[[], Iterable[str]]) -> None:
         atoms = "C N O F".split()
         for atom in atoms:
-            path = str(self.save_folder / f"{atom}-summary.tex")
+            path = str(self.save_folder / f"{self.prefix}_{atom}-summary.tex")
             self.series_table(atom.lower(), scheme_factory(), path)
-        self.all_table(scheme_factory(), str(self.save_folder / "all-summary.tex"))
+        self.all_table(
+            scheme_factory(), str(self.save_folder / f"{self.prefix}_all-summary.tex")
+        )
 
 
 class UsedGeometries:
