@@ -275,7 +275,7 @@ def extrap_err_bars_summary(
             abs_errs.extend(atomSchemeStats[atom][names[i]]["abs_errors"])
         yVals.append(cast(float, np.mean(abs_errs)))
         yErrs.append(cast(float, np.std(abs_errs)))
-
+    print(f"{include5=}, {yVals=}")
     fig.add_trace(
         create_bar_trace(labels, yVals, "general", yErrs, extrapscale, showlegend=False)
     )

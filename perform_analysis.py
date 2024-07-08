@@ -36,20 +36,17 @@ pobj.process(save=True)
 
 # # First, let's filter out the molecules we want to use
 atomToMols = constants.ATOM_TO_MOLS
-# excludeAtomToMols = {
-#     "c": set("c-o ch3-c-o2h".split()),
-#     "n": set(
-#         "mnh2pyridi-n-e onh2pyridi-n-e o-n-h2pyridine m-n-h2pyridine pfpyridine".split()
-#     ),
-#     "o": set(
-#         "cf3co-o-h cf3c-o-oh ch3co-o-ch3 ch3c-o-och3 ".split()
-#     ),
-#     "f": set("cf3ocf3".split()),
-# }
-# atomToMols = {
-#     atom.lower(): atomToMols[atom] - excludeAtomToMols[atom]
-#     for atom in atomToMols
-# }
+excludeAtomToMols = {
+    "c": set("c-o ch3-c-o2h".split()),
+    "n": set(
+        "mnh2pyridi-n-e onh2pyridi-n-e o-n-h2pyridine m-n-h2pyridine pfpyridine".split()
+    ),
+    "o": set("cf3co-o-h cf3c-o-oh ch3co-o-ch3 ch3c-o-och3 ".split()),
+    "f": set("cf3ocf3".split()),
+}
+atomToMols = {
+    atom.lower(): atomToMols[atom] - excludeAtomToMols[atom] for atom in atomToMols
+}
 filtered_by_mols = pobj.filter_data_by_molecules(pobj.algoToDelta, atomToMols)
 filteredData = pobj.filter_by_presence_of_experimental(filtered_by_mols)
 
@@ -59,12 +56,13 @@ pobj.calculate_series_statistics()
 pobj.calculate_overall_statistics()
 
 
-eobj = extrapolation.WholeDataset()
+eobj = extrapolation.WholeDataset(include_pcX=True, include_ccX=True)
 eobj._create_extrapolation_schemes()
 eobj.debug = False
-eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["HF"])
+# eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["HF"])
 eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["CCSD"])
 eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["MP2"])
+eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["MP2_pure"])
 
 eobj.calculate_errors(pobj.molToExper)
 eobj.calculate_series_statistics()
@@ -92,11 +90,19 @@ table3 = create_tables.ExtrapSchemeSummary(
     eobj.algoToStats["mom"],
     eobj.algoToAtomStats["mom"],
     save_folder=TABLE_PATH / "extrap-summaries",
-    show_sample_size=True,
+    show_sample_size=False,
     isPublication=True,
 )
 
 eobj._schemeIterKeys = ["HF", "CCSD", "MP2"]
+eobj._schemeIterKeys = ["CCSD"]
+table3.prefix = "cc_"
+table3.results_for_schemes(scheme_factory=eobj.scheme_generator)
+eobj._schemeIterKeys = ["MP2_pure"]
+table3.prefix = "mp_pure_"
+table3.results_for_schemes(scheme_factory=eobj.scheme_generator)
+eobj._schemeIterKeys = ["MP2"]
+table3.prefix = "mp_comp_"
 table3.results_for_schemes(scheme_factory=eobj.scheme_generator)
 
 table4 = create_tables.UsedGeometries(
@@ -163,6 +169,7 @@ create_figures.extrap_err_bars_dtstudy(
     eobj.algoToAtomStats["mom"], mp2_w5, mp2Colors, figures_path, suffix="-mp2-w5"
 )
 
+eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
 eobj.extrapolate_all_delta_data(filteredData, schemes=eobj.schemeDict["MP2_EXT"])
 eobj.calculate_errors(pobj.molToExper)
 eobj.calculate_series_statistics()
